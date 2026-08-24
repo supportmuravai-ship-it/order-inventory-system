@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="OrderManagement.Api/OrderManagement.Api.csproj" />
+  <Project Path="OrderManagement.Core/OrderManagement.Core.csproj" />
+  <Project Path="OrderManagement.Infrastructure/OrderManagement.Infrastructure.csproj" />
+</Solution>
