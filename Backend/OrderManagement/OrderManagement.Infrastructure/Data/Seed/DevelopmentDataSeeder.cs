@@ -97,6 +97,8 @@ public static class DevelopmentDataSeeder
         await AddStoreAccessAsync(dbContext, warehouseStaff.Id, testStore.Id);
 
         await dbContext.SaveChangesAsync();
+
+        await Phase2OrderDataSeeder.SeedAsync(dbContext);
     }
 
     private static async Task<ApplicationUser> CreateUserAsync(

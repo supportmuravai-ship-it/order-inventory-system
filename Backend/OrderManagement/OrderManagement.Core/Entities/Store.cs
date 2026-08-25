@@ -1,5 +1,4 @@
 ﻿namespace OrderManagement.Core.Entities;
-
 public class Store
 {
     public int Id { get; set; }
@@ -14,7 +13,14 @@ public class Store
 
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public ICollection<UserStoreAccess> UserAccesses { get; set; }   = new List<UserStoreAccess>();
+    public ICollection<UserStoreAccess> UserAccesses { get; set; }
+        = new List<UserStoreAccess>();
+
+    public ICollection<Customer> Customers { get; set; }
+        = new List<Customer>();
+
+    public ICollection<Order> Orders { get; set; }
+        = new List<Order>();
 }
 
 // We are intentionally not adding Shopify credentials, domains, webhooks, etc. Those belong to later phases.
