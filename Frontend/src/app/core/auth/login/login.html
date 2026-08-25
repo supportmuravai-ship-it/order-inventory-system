@@ -1,0 +1,279 @@
+<div class="relative min-h-screen overflow-hidden bg-[#f8faff]">
+
+  <!-- Decorative background -->
+  <div
+    class="pointer-events-none absolute -bottom-48 -left-44 h-[520px] w-[720px]
+           rotate-[10deg] rounded-[50%] bg-blue-100/70 blur-sm">
+  </div>
+
+  <div
+    class="pointer-events-none absolute -bottom-52 left-10 h-[430px] w-[760px]
+           -rotate-[8deg] rounded-[50%] bg-indigo-100/60">
+  </div>
+
+  <div
+    class="pointer-events-none absolute -right-44 top-44 h-[460px] w-[460px]
+           rounded-full bg-blue-100/70">
+  </div>
+
+
+  <div
+    class="relative z-10 flex min-h-screen items-center justify-center
+           px-5 py-10">
+
+    <div class="w-full max-w-[430px]">
+
+      <!-- Logo -->
+      <div class="mb-9 text-center">
+
+        <div
+          class="inline-flex items-center text-[34px] font-black
+                 tracking-[-2px] text-slate-950">
+
+          SQUAD<span class="text-blue-600">21</span>
+
+        </div>
+
+      </div>
+
+
+      <div class="mb-7 text-center">
+
+        <h1
+          class="text-2xl font-bold text-slate-900">
+          Welcome Back!
+        </h1>
+
+        <p
+          class="mt-1 text-sm text-slate-500">
+          Login to your account
+        </p>
+
+      </div>
+
+
+      <form
+        [formGroup]="loginForm"
+        (ngSubmit)="login()"
+        class="space-y-4">
+
+
+        <!-- Email -->
+        <div>
+
+          <div class="relative">
+
+            <div
+              class="pointer-events-none absolute inset-y-0 left-0
+                     flex items-center pl-4 text-slate-400">
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  d="M3 8l9 6 9-6M5 5h14a2 2 0 012 2v10a2
+                     2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+
+              </svg>
+
+            </div>
+
+            <input
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="Enter your email"
+              class="h-12 w-full rounded-lg border border-slate-200
+                     bg-white pl-11 pr-4 text-sm text-slate-900
+                     outline-none transition
+                     placeholder:text-slate-400
+                     focus:border-blue-500
+                     focus:ring-2 focus:ring-blue-100" />
+
+          </div>
+
+          @if (
+            loginForm.controls.email.touched &&
+            loginForm.controls.email.invalid
+          ) {
+            <p class="mt-1 text-xs text-red-600">
+              Enter a valid email address.
+            </p>
+          }
+
+        </div>
+
+
+        <!-- Password -->
+        <div>
+
+          <div class="relative">
+
+            <div
+              class="pointer-events-none absolute inset-y-0 left-0
+                     flex items-center pl-4 text-slate-400">
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  d="M12 11a2 2 0 100-4 2 2 0 000 4zm6 0V9a6
+                     6 0 10-12 0v2m-1 0h14v9H5v-9z" />
+
+              </svg>
+
+            </div>
+
+
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              class="h-12 w-full rounded-lg border border-slate-200
+                     bg-white pl-11 pr-12 text-sm text-slate-900
+                     outline-none transition
+                     placeholder:text-slate-400
+                     focus:border-blue-500
+                     focus:ring-2 focus:ring-blue-100" />
+
+
+            <button
+              type="button"
+              (click)="togglePassword()"
+              class="absolute inset-y-0 right-0 flex items-center
+                     px-4 text-slate-400 hover:text-slate-600">
+
+              @if (!showPassword()) {
+
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor">
+
+                  <path
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5
+                       6-10 6S2 12 2 12z"/>
+
+                  <circle cx="12" cy="12" r="2.5"
+                          stroke-width="1.8"/>
+
+                </svg>
+
+              } @else {
+
+                <span class="text-xs font-medium">
+                  Hide
+                </span>
+
+              }
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div
+          class="flex items-center justify-between text-xs">
+
+          <label
+            class="flex items-center gap-2 text-slate-600">
+
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-slate-300
+                     accent-blue-600" />
+
+            Remember me
+
+          </label>
+
+          <span class="text-blue-600">
+            Forgot Password?
+          </span>
+
+        </div>
+
+
+        @if (errorMessage()) {
+
+          <div
+            class="rounded-lg border border-red-200 bg-red-50
+                   px-4 py-3 text-sm text-red-700">
+
+            {{ errorMessage() }}
+
+          </div>
+
+        }
+
+
+        <button
+          type="submit"
+          [disabled]="loading()"
+          class="h-12 w-full rounded-lg bg-blue-600
+                 text-sm font-semibold text-white
+                 transition hover:bg-blue-700
+                 disabled:cursor-not-allowed
+                 disabled:opacity-60">
+
+          @if (loading()) {
+            Logging in...
+          } @else {
+            Login
+          }
+
+        </button>
+
+      </form>
+
+
+      <div
+        class="mt-10 flex items-center justify-center
+               gap-2 text-xs text-slate-500">
+
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 text-blue-600"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor">
+
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.8"
+            d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" />
+
+        </svg>
+
+        Secure & Reliable COD Management
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,26 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
-import { HealthService } from './core/services/health.service';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [RouterOutlet],
+  templateUrl: './app.html'
 })
 export class App {
-  private healthService = inject(HealthService);
-
-  apiStatus = signal('Checking...');
-
-  constructor() {
-    this.healthService.getHealth().subscribe({
-      next: response => {
-        this.apiStatus.set(response.status);
-      },
-      error: error => {
-        console.error('Health API error:', error);
-        this.apiStatus.set('API unavailable');
-      }
-    });
-  }
 }
