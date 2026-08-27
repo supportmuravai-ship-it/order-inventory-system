@@ -1,87 +1,66 @@
-import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  Component,
+  inject,
+  OnInit,
+  signal
+} from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { OrdersService } from '../../orders/services/orders.service';
+import { OrderListItem } from '../../orders/models/order.model';
 
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  template: `
-    <div class="min-h-screen bg-gray-100">
-
-      <header class="bg-white border-b">
-
-        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-
-          <div>
-            <div class="text-xl font-bold">
-              SQUAD<span class="text-blue-600">21</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-4">
-
-            <span class="text-sm text-gray-600">
-              {{ authService.currentUser()?.name }}
-            </span>
-
-            <button
-              type="button"
-              (click)="changeStore()"
-              class="text-sm text-blue-600 hover:underline">
-
-              Change Store
-
-            </button>
-
-            <button
-              type="button"
-              (click)="logout()"
-              class="text-sm text-red-600 hover:underline">
-
-              Logout
-
-            </button>
-
-          </div>
-
-        </div>
-
-      </header>
-
-
-      <main class="max-w-6xl mx-auto p-6">
-
-        <div class="bg-white rounded-xl shadow p-8">
-
-          <h1 class="text-2xl font-bold text-gray-900">
-            {{ authService.selectedStore()?.name }}
-          </h1>
-
-          <p class="text-gray-600 mt-2">
-            Store workspace is ready.
-          </p>
-
-          <div class="mt-6 bg-blue-50 p-4 rounded-lg">
-
-            <p class="text-sm text-blue-800">
-              Orders and dashboard will be added in the next phases.
-            </p>
-
-          </div>
-
-        </div>
-
-      </main>
-
-    </div>
-  `
+  imports: [
+    CommonModule
+  ],
+  templateUrl: './workspace.html',
 })
-export class WorkspaceComponent {
+export class WorkspaceComponent implements OnInit {
 
   readonly authService = inject(AuthService);
 
+  private readonly ordersService = inject(OrdersService);
   private readonly router = inject(Router);
+
+  readonly orders = signal<OrderListItem[]>([]);
+  readonly loading = signal(true);
+  readonly errorMessage = signal('');
+
+  ngOnInit(): void {
+    this.loadOrders();
+  }
+
+  private loadOrders(): void {
+
+    const store = this.authService.selectedStore();
+
+    if (!store) {
+      this.router.navigate(['/stores']);
+      return;
+    }
+
+    this.loading.set(true);
+    this.errorMessage.set('');
+
+    this.ordersService.getOrders(store.id)
+      .subscribe({
+        next: orders => {
+          this.orders.set(orders);
+          this.loading.set(false);
+        },
+
+        error: () => {
+          this.loading.set(false);
+          this.errorMessage.set(
+            'Could not load orders.'
+          );
+        }
+      });
+  }
 
   changeStore(): void {
 
@@ -100,6 +79,55 @@ export class WorkspaceComponent {
           this.router.navigate(['/login']);
         }
       });
+  }
 
+  getStatusName(status: number): string {
+
+    const statuses: Record<number, string> = {
+      0: 'Confirmed',
+      1: 'Shipped',
+      2: 'Delivered',
+      3: 'No Response',
+      4: 'Return',
+      5: 'Return In Process',
+      6: 'Cancelled',
+      7: 'Repeated Order'
+    };
+
+    return statuses[status] ?? 'Unknown';
+  }
+
+  getStatusClasses(status: number): string {
+
+  const classes: Record<number, string> = {
+    0: 'bg-purple-100 text-purple-700',  // Confirmed
+    1: 'bg-blue-100 text-blue-700',      // Shipped
+    2: 'bg-green-100 text-green-700',    // Delivered
+    3: 'bg-orange-100 text-orange-700',  // No Response
+    4: 'bg-red-100 text-red-700',        // Return
+    5: 'bg-yellow-100 text-yellow-700',  // Return In Process
+    6: 'bg-gray-200 text-gray-700',      // Cancelled
+    7: 'bg-pink-100 text-pink-700'       // Repeated Order
+  };
+
+  return classes[status] ?? 'bg-gray-100 text-gray-700';
+}
+
+  getSourceName(source: number): string {
+
+    const sources: Record<number, string> = {
+      0: 'Shopify',
+      1: 'CSV Import',
+      2: 'WhatsApp',
+      3: 'Other'
+    };
+
+    return sources[source] ?? 'Unknown';
+  }
+
+  getInvoiceName(status: number): string {
+    return status === 0
+      ? 'Paid'
+      : 'Unpaid';
   }
 }

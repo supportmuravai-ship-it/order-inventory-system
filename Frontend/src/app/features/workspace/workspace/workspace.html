@@ -1,1 +1,314 @@
-<p>workspace works!</p>
+<div class="min-h-screen bg-gray-100">
+  <!-- Top Header -->
+  <header class="border-b bg-white">
+    <div class="flex items-center justify-between px-4 py-4 lg:px-6">
+      <div class="flex items-center gap-6">
+        <div class="text-xl font-bold tracking-wide">
+          SQUAD<span class="text-blue-600">21</span>
+        </div>
+
+        <div class="hidden text-lg font-semibold text-gray-900 md:block">Order Management</div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden text-sm text-gray-600 sm:block">
+          {{ authService.currentUser()?.name }}
+        </div>
+
+        <button
+          type="button"
+          (click)="changeStore()"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Change Store
+        </button>
+
+        <button
+          type="button"
+          (click)="logout()"
+          class="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="hidden min-h-[calc(100vh-73px)] w-60 bg-slate-900 p-4 lg:block">
+      <div class="mb-6 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white">Orders</div>
+
+      <div class="space-y-2">
+        <div class="rounded-lg px-4 py-3 text-sm text-gray-300">Dashboard</div>
+
+        <div class="rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white">
+          All Orders
+        </div>
+
+        <div class="rounded-lg px-4 py-3 text-sm text-gray-400">Returns</div>
+
+        <div class="rounded-lg px-4 py-3 text-sm text-gray-400">Import Orders</div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="min-w-0 flex-1 p-4 md:p-6">
+      <!-- Page Header -->
+      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Orders</h1>
+
+          <p class="mt-1 text-sm text-gray-500">
+            {{ authService.selectedStore()?.name }}
+          </p>
+        </div>
+
+        <div class="rounded-lg border bg-white px-4 py-2 text-sm text-gray-600">
+          {{ orders().length }} orders
+        </div>
+      </div>
+
+      <!-- Loading -->
+      @if (loading()) {
+        <div class="rounded-xl bg-white p-8 text-center shadow-sm">
+          <p class="text-sm text-gray-500">Loading orders...</p>
+        </div>
+      }
+
+      <!-- Error -->
+      @else if (errorMessage()) {
+        <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+          <p class="text-sm text-red-700">
+            {{ errorMessage() }}
+          </p>
+        </div>
+      }
+
+      <!-- Orders -->
+      @else {
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div class="border-b border-gray-200 px-5 py-4">
+            <h2 class="font-semibold text-gray-900">All Orders</h2>
+          </div>
+
+          <!-- Horizontal scroll for tablet/mobile -->
+          <div class="max-h-[70vh] overflow-auto">
+            <table class="min-w-max text-left text-sm">
+              <thead class="sticky top-0 z-10 bg-gray-50 text-xs font-semibold uppercase text-gray-500">
+                <tr>
+                  <th class="whitespace-nowrap px-4 py-3">Date</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Order ID</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Full Name</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Phone</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Address 1</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">City</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Product Name</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Price</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Product Variant</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">SKU</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Quantity</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Total Price</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Tracking Number</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Airway Bill</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Order Status</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Location Link</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Final Decision</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Order Source</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Tag</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Shoaib's Note</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Trenvo Note</th>
+
+                  <th class="whitespace-nowrap px-4 py-3">Invoice Status</th>
+                </tr>
+              </thead>
+
+              <tbody class="divide-y divide-gray-100">
+                @for (order of orders(); track order.id) {
+                  @for (item of order.items; track item.id; let first = $first) {
+                    <tr class="hover:bg-gray-50">
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        @if (first) {
+                          {{ order.orderDateUtc | date: 'dd MMM yyyy' }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">
+                        @if (first) {
+                          {{ order.displayOrderId }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-700">
+                        @if (first) {
+                          {{ order.fullName }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        @if (first) {
+                          {{ order.phone }}
+                        }
+                      </td>
+
+                      <td class="max-w-64 px-4 py-3 text-gray-600">
+                        @if (first) {
+                          {{ order.addressLine1 }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        @if (first) {
+                          {{ order.city }}
+                        }
+                      </td>
+
+                      <!-- Item-level fields -->
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-800">
+                        {{ item.productName }}
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-700">
+                        AED {{ item.unitPrice | number: '1.2-2' }}
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        {{ item.variantName || '—' }}
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        {{ item.sku || '—' }}
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-center text-gray-700">
+                        {{ item.quantity }}
+                      </td>
+
+                      <!-- Order-level fields -->
+
+                      <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                        @if (first) {
+                          {{ order.currency }}
+                          {{ order.totalAmount | number: '1.2-2' }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        @if (first) {
+                          {{ order.trackingNumber || '—' }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
+                        @if (first) {
+                          Not uploaded
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3">
+                        @if (first) {
+                          <span
+                            class="rounded-full px-3 py-1 text-xs font-medium"
+                            [ngClass]="getStatusClasses(order.orderStatus)"
+                          >
+                            {{ getStatusName(order.orderStatus) }}
+                          </span>
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3">
+                        @if (first) {
+                          @if (order.locationLink) {
+                            <a
+                              [href]="order.locationLink"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-blue-600 hover:underline"
+                            >
+                              Open
+                            </a>
+                          } @else {
+                            <span class="text-gray-400">—</span>
+                          }
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        @if (first) {
+                          {{ order.finalDecision || '—' }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                        @if (first) {
+                          {{ getSourceName(order.orderSource) }}
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
+                        @if (first) {
+                          —
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
+                        @if (first) {
+                          —
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
+                        @if (first) {
+                          —
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3">
+                        @if (first) {
+                          @if (order.invoiceStatus === 0) {
+                            <span
+                              class="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
+                            >
+                              Paid
+                            </span>
+                          } @else {
+                            <span
+                              class="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700"
+                            >
+                              Unpaid
+                            </span>
+                          }
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </main>
+  </div>
+</div>
