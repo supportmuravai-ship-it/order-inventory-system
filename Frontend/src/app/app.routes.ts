@@ -12,6 +12,8 @@ import { authGuard } from './core/guards/auth.guard';
 import { storeGuard } from './core/guards/store.guard';
 import { AdminComponent } from './features/admin/admin/admin';
 import { adminGuard } from './core/guards/role.guard';
+import { OrderDetailsComponent } from './features/orders/order-details/order-details';
+
 export const routes: Routes = [
 
   {
@@ -53,6 +55,15 @@ export const routes: Routes = [
     redirectTo: 'login',
     pathMatch: 'full'
   },
+
+  {
+  path: 'workspace/orders/:orderId',
+  component: OrderDetailsComponent,
+  canActivate: [
+    authGuard,
+    storeGuard
+  ]
+},
 
   {
     path: '**',

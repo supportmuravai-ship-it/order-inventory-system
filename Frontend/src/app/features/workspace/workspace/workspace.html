@@ -53,22 +53,103 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="min-w-0 flex-1 p-4 md:p-6">
+    <main class="min-w-0 flex-1 p-4 md:p-6 bg-white shadow-sm">
       <!-- Page Header -->
+      <h2 class="font-bold text-2xl mb-4">Order management Overview</h2>
       <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Orders</h1>
+        <!-- Order Summary -->
+        <div class="mb-5">
+          @if (summaryLoading()) {
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <p class="text-sm text-gray-500">Loading summary...</p>
+            </div>
+          } @else {
+            <div class="grid gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9">
+              <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase text-gray-500">Total Orders</p>
 
-          <p class="mt-1 text-sm text-gray-500">
-            {{ authService.selectedStore()?.name }}
-          </p>
-        </div>
+                <p class="mt-2 text-2xl font-bold text-gray-900">
+                  {{ summary().totalOrders }}
+                </p>
+              </div>
 
-        <div class="rounded-lg border bg-white px-4 py-2 text-sm text-gray-600">
-          {{ orders().length }} orders
+              <div class="rounded-xl border border-purple-200 bg-purple-50 p-4">
+                <p class="text-xs font-medium uppercase text-purple-700">Confirmed</p>
+
+                <p class="mt-2 text-2xl font-bold text-purple-900">
+                  {{ summary().confirmed }}
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <p class="text-xs font-medium uppercase text-blue-700">Shipped</p>
+
+                <p class="mt-2 text-2xl font-bold text-blue-900">
+                  {{ summary().shipped }}
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-green-200 bg-green-50 p-4">
+                <p class="text-xs font-medium uppercase text-green-700">Delivered</p>
+
+                <p class="mt-2 text-2xl font-bold text-green-900">
+                  {{ summary().delivered }}
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-orange-200 bg-orange-50 p-4">
+                <p class="text-xs font-medium uppercase text-orange-700">No Response</p>
+
+                <p class="mt-2 text-2xl font-bold text-orange-900">
+                  {{ summary().noResponse }}
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+                <p class="text-xs font-medium uppercase text-red-700">Return</p>
+
+                <p class="mt-2 text-2xl font-bold text-red-900">
+                  {{ summary().return }}
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+                <p class="text-xs font-medium uppercase text-yellow-700">Return In Process</p>
+
+                <p class="mt-2 text-2xl font-bold text-yellow-900">
+                  {{ summary().returnInProcess }}
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-gray-300 bg-gray-100 p-4">
+                <p class="text-xs font-medium uppercase text-gray-600">Cancelled</p>
+
+                <p class="mt-2 text-2xl font-bold text-gray-900">
+                  {{ summary().cancelled }}
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-pink-200 bg-pink-50 p-4">
+                <p class="text-xs font-medium uppercase text-pink-700">Repeated Order</p>
+
+                <p class="mt-2 text-2xl font-bold text-pink-900">
+                  {{ summary().repeatedOrder }}
+                </p>
+              </div>
+            </div>
+          }
         </div>
       </div>
 
+      <!-- Orders table -->
+
+      @if (statusUpdateMessage()) {
+        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+          <p class="text-sm text-green-700">
+            {{ statusUpdateMessage() }}
+          </p>
+        </div>
+      }
       <!-- Loading -->
       @if (loading()) {
         <div class="rounded-xl bg-white p-8 text-center shadow-sm">
@@ -89,13 +170,195 @@
       @else {
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <div class="border-b border-gray-200 px-5 py-4">
-            <h2 class="font-semibold text-gray-900">All Orders</h2>
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <h2 class="font-semibold text-gray-900">All Orders</h2>
+
+                <label class="flex items-center gap-2 text-sm text-gray-600">
+                  Sort
+
+                  <select
+                    [value]="sort()"
+                    (change)="changeSort($event)"
+                    class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="orderId">Order ID</option>
+                    <option value="customerName">Customer Name</option>
+                    <option value="totalPrice">Total Price</option>
+                    <option value="orderStatus">Order Status</option>
+                  </select>
+                </label>
+
+                <div class="flex w-full gap-2 md:w-auto">
+                  <input
+                    type="text"
+                    [value]="search()"
+                    (input)="search.set($any($event.target).value)"
+                    (keyup.enter)="searchOrders()"
+                    placeholder="Order ID, name, phone, tracking..."
+                    class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 md:w-80"
+                  />
+
+                  <button
+                    type="button"
+                    (click)="searchOrders()"
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    Search
+                  </button>
+
+                  @if (search()) {
+                    <button
+                      type="button"
+                      (click)="clearSearch()"
+                      class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                    >
+                      Clear
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600"> Date From </label>
+
+                  <input
+                    type="date"
+                    [value]="dateFrom()"
+                    (input)="dateFrom.set($any($event.target).value)"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600"> Date To </label>
+
+                  <input
+                    type="date"
+                    [value]="dateTo()"
+                    (input)="dateTo.set($any($event.target).value)"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600"> Order Status </label>
+
+                  <select
+                    [value]="selectedStatus() ?? ''"
+                    (change)="
+                      selectedStatus.set(
+                        $any($event.target).value === '' ? undefined : +$any($event.target).value
+                      )
+                    "
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">All</option>
+                    <option value="0">Confirmed</option>
+                    <option value="1">Shipped</option>
+                    <option value="2">Delivered</option>
+                    <option value="3">No Response</option>
+                    <option value="4">Return</option>
+                    <option value="5">Return In Process</option>
+                    <option value="6">Cancelled</option>
+                    <option value="7">Repeated Order</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600"> Product </label>
+
+                  <input
+                    type="text"
+                    [value]="productFilter()"
+                    (input)="productFilter.set($any($event.target).value)"
+                    placeholder="Product name"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600"> SKU </label>
+
+                  <input
+                    type="text"
+                    [value]="skuFilter()"
+                    (input)="skuFilter.set($any($event.target).value)"
+                    placeholder="SKU"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600"> Order Source </label>
+
+                  <select
+                    [value]="selectedSource() ?? ''"
+                    (change)="
+                      selectedSource.set(
+                        $any($event.target).value === '' ? undefined : +$any($event.target).value
+                      )
+                    "
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">All</option>
+                    <option value="0">Shopify</option>
+                    <option value="1">CSV Import</option>
+                    <option value="2">WhatsApp</option>
+                    <option value="3">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600">
+                    Invoice Status
+                  </label>
+
+                  <select
+                    [value]="selectedInvoiceStatus() ?? ''"
+                    (change)="
+                      selectedInvoiceStatus.set(
+                        $any($event.target).value === '' ? undefined : +$any($event.target).value
+                      )
+                    "
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">All</option>
+                    <option value="0">Paid</option>
+                    <option value="1">Unpaid</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  (click)="applyFilters()"
+                  class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                >
+                  Apply Filters
+                </button>
+
+                <button
+                  type="button"
+                  (click)="clearFilters()"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Horizontal scroll for tablet/mobile -->
           <div class="max-h-[70vh] overflow-auto">
             <table class="min-w-max text-left text-sm">
-              <thead class="sticky top-0 z-10 bg-gray-50 text-xs font-semibold uppercase text-gray-500">
+              <thead
+                class="sticky top-0 z-10 bg-gray-50 text-xs font-semibold uppercase text-gray-500"
+              >
                 <tr>
                   <th class="whitespace-nowrap px-4 py-3">Date</th>
 
@@ -144,6 +407,14 @@
               </thead>
 
               <tbody class="divide-y divide-gray-100">
+                @if (orders().length === 0) {
+                  <tr>
+                    <td colspan="22" class="px-6 py-12 text-center text-sm text-gray-500">
+                      No orders found for the current search or filters.
+                    </td>
+                  </tr>
+                }
+
                 @for (order of orders(); track order.id) {
                   @for (item of order.items; track item.id; let first = $first) {
                     <tr class="hover:bg-gray-50">
@@ -153,9 +424,15 @@
                         }
                       </td>
 
-                      <td class="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">
+                      <td class="whitespace-nowrap px-4 py-3 font-semibold">
                         @if (first) {
-                          {{ order.displayOrderId }}
+                          <button
+                            type="button"
+                            (click)="openOrder(order.id)"
+                            class="font-semibold text-blue-600 hover:underline"
+                          >
+                            {{ order.displayOrderId }}
+                          </button>
                         }
                       </td>
 
@@ -216,7 +493,51 @@
 
                       <td class="whitespace-nowrap px-4 py-3 text-gray-600">
                         @if (first) {
-                          {{ order.trackingNumber || '—' }}
+                          @if (editingTrackingOrderId() === order.id) {
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="text"
+                                maxlength="100"
+                                [value]="trackingEditValue()"
+                                (input)="trackingEditValue.set($any($event.target).value)"
+                                (keyup.enter)="saveTracking(order)"
+                                [disabled]="savingTrackingOrderId() === order.id"
+                                placeholder="Tracking number"
+                                class="w-44 rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                              />
+
+                              <button
+                                type="button"
+                                (click)="saveTracking(order)"
+                                [disabled]="savingTrackingOrderId() === order.id"
+                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                              >
+                                @if (savingTrackingOrderId() === order.id) {
+                                  Saving...
+                                } @else {
+                                  Save
+                                }
+                              </button>
+
+                              <button
+                                type="button"
+                                (click)="cancelTrackingEdit()"
+                                [disabled]="savingTrackingOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="startTrackingEdit(order)"
+                              class="rounded px-2 py-1 text-left hover:bg-blue-50 hover:text-blue-600"
+                              title="Click to edit tracking number"
+                            >
+                              {{ order.trackingNumber || 'Add tracking' }}
+                            </button>
+                          }
                         }
                       </td>
 
@@ -228,35 +549,171 @@
 
                       <td class="whitespace-nowrap px-4 py-3">
                         @if (first) {
-                          <span
-                            class="rounded-full px-3 py-1 text-xs font-medium"
-                            [ngClass]="getStatusClasses(order.orderStatus)"
-                          >
-                            {{ getStatusName(order.orderStatus) }}
-                          </span>
+                          @if (editingStatusOrderId() === order.id) {
+                            <div class="flex items-center gap-2">
+                              <select
+                                [value]="statusEditValue()"
+                                (change)="statusEditValue.set(+$any($event.target).value)"
+                                [disabled]="savingStatusOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-blue-500 disabled:opacity-50"
+                              >
+                                <option value="0">Confirmed</option>
+                                <option value="1">Shipped</option>
+                                <option value="2">Delivered</option>
+                                <option value="3">No Response</option>
+                                <option value="4">Return</option>
+                                <option value="5">Return In Process</option>
+                                <option value="6">Cancelled</option>
+                                <option value="7">Repeated Order</option>
+                              </select>
+
+                              <button
+                                type="button"
+                                (click)="saveStatus(order)"
+                                [disabled]="
+                                  savingStatusOrderId() === order.id ||
+                                  statusEditValue() === order.orderStatus
+                                "
+                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                @if (savingStatusOrderId() === order.id) {
+                                  Saving...
+                                } @else {
+                                  Save
+                                }
+                              </button>
+
+                              <button
+                                type="button"
+                                (click)="cancelStatusEdit()"
+                                [disabled]="savingStatusOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="startStatusEdit(order)"
+                              class="rounded-full px-3 py-1 text-xs font-medium transition hover:ring-2 hover:ring-blue-200"
+                              [ngClass]="getStatusClasses(order.orderStatus)"
+                              title="Click to change status"
+                            >
+                              {{ getStatusName(order.orderStatus) }}
+                            </button>
+                          }
                         }
                       </td>
 
                       <td class="whitespace-nowrap px-4 py-3">
                         @if (first) {
-                          @if (order.locationLink) {
-                            <a
-                              [href]="order.locationLink"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="text-blue-600 hover:underline"
-                            >
-                              Open
-                            </a>
+                          @if (editingLocationOrderId() === order.id) {
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="url"
+                                maxlength="500"
+                                [value]="locationEditValue()"
+                                (input)="locationEditValue.set($any($event.target).value)"
+                                (keyup.enter)="saveLocationLink(order)"
+                                [disabled]="savingLocationOrderId() === order.id"
+                                placeholder="https://..."
+                                class="w-56 rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                              />
+
+                              <button
+                                type="button"
+                                (click)="saveLocationLink(order)"
+                                [disabled]="savingLocationOrderId() === order.id"
+                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                              >
+                                @if (savingLocationOrderId() === order.id) {
+                                  Saving...
+                                } @else {
+                                  Save
+                                }
+                              </button>
+
+                              <button
+                                type="button"
+                                (click)="cancelLocationEdit()"
+                                [disabled]="savingLocationOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           } @else {
-                            <span class="text-gray-400">—</span>
+                            <div class="flex items-center gap-2">
+                              @if (order.locationLink) {
+                                <a
+                                  [href]="order.locationLink"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="text-blue-600 hover:underline"
+                                >
+                                  Open
+                                </a>
+                              }
+
+                              <button
+                                type="button"
+                                (click)="startLocationEdit(order)"
+                                class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                {{ order.locationLink ? 'Edit' : 'Add' }}
+                              </button>
+                            </div>
                           }
                         }
                       </td>
 
                       <td class="whitespace-nowrap px-4 py-3 text-gray-600">
                         @if (first) {
-                          {{ order.finalDecision || '—' }}
+                          @if (editingFinalDecisionOrderId() === order.id) {
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="text"
+                                maxlength="500"
+                                [value]="finalDecisionEditValue()"
+                                (input)="finalDecisionEditValue.set($any($event.target).value)"
+                                (keyup.enter)="saveFinalDecision(order)"
+                                [disabled]="savingFinalDecisionOrderId() === order.id"
+                                placeholder="Final decision"
+                                class="w-48 rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                              />
+
+                              <button
+                                type="button"
+                                (click)="saveFinalDecision(order)"
+                                [disabled]="savingFinalDecisionOrderId() === order.id"
+                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                              >
+                                @if (savingFinalDecisionOrderId() === order.id) {
+                                  Saving...
+                                } @else {
+                                  Save
+                                }
+                              </button>
+
+                              <button
+                                type="button"
+                                (click)="cancelFinalDecisionEdit()"
+                                [disabled]="savingFinalDecisionOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="startFinalDecisionEdit(order)"
+                              class="rounded px-2 py-1 text-left hover:bg-blue-50 hover:text-blue-600"
+                            >
+                              {{ order.finalDecision || 'Add decision' }}
+                            </button>
+                          }
                         }
                       </td>
 
@@ -286,18 +743,57 @@
 
                       <td class="whitespace-nowrap px-4 py-3">
                         @if (first) {
-                          @if (order.invoiceStatus === 0) {
-                            <span
-                              class="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
-                            >
-                              Paid
-                            </span>
+                          @if (editingInvoiceOrderId() === order.id) {
+                            <div class="flex items-center gap-2">
+                              <select
+                                [value]="invoiceEditValue()"
+                                (change)="invoiceEditValue.set(+$any($event.target).value)"
+                                [disabled]="savingInvoiceOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm"
+                              >
+                                <option value="0">Paid</option>
+                                <option value="1">Unpaid</option>
+                              </select>
+
+                              <button
+                                type="button"
+                                (click)="saveInvoiceStatus(order)"
+                                [disabled]="
+                                  savingInvoiceOrderId() === order.id ||
+                                  invoiceEditValue() === order.invoiceStatus
+                                "
+                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                              >
+                                @if (savingInvoiceOrderId() === order.id) {
+                                  Saving...
+                                } @else {
+                                  Save
+                                }
+                              </button>
+
+                              <button
+                                type="button"
+                                (click)="cancelInvoiceEdit()"
+                                [disabled]="savingInvoiceOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           } @else {
-                            <span
-                              class="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700"
+                            <button
+                              type="button"
+                              (click)="startInvoiceEdit(order)"
+                              class="rounded-full px-3 py-1 text-xs font-medium"
+                              [ngClass]="
+                                order.invoiceStatus === 0
+                                  ? 'bg-green-50 text-green-700'
+                                  : 'bg-orange-50 text-orange-700'
+                              "
+                              title="Click to change invoice status"
                             >
-                              Unpaid
-                            </span>
+                              {{ getInvoiceName(order.invoiceStatus) }}
+                            </button>
                           }
                         }
                       </td>
@@ -306,6 +802,53 @@
                 }
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination -->
+          <div
+            class="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="text-sm text-gray-500">
+              @if (totalCount() > 0) {
+                Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} orders
+              } @else {
+                No results
+              }
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <label class="flex items-center gap-2 text-sm text-gray-600">
+                Rows
+
+                <select
+                  [value]="pageSize()"
+                  (change)="changePageSize($event)"
+                  class="rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-700"
+                >
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
+
+              <button
+                type="button"
+                (click)="goToPreviousPage()"
+                [disabled]="loading() || page() <= 1"
+                class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+
+              <button
+                type="button"
+                (click)="goToNextPage()"
+                [disabled]="loading() || totalPages() === 0 || page() >= totalPages()"
+                class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       }

@@ -1,9 +1,15 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { OrderDetails, OrderListItem } from '../models/order.model';
+import {
+  OrderDetails,
+  OrderListItem,
+  PagedResult,
+  OrderQuery,
+  OrderSummary,
+} from '../models/order.model';
 
 @Injectable({
   providedIn: 'root',
@@ -13,14 +19,145 @@ export class OrdersService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getOrders(storeId: number): Observable<OrderListItem[]> {
-    return this.http.get<OrderListItem[]>(`${this.apiUrl}/api/stores/${storeId}/orders`, {
-      withCredentials: true,
-    });
+  getOrders(storeId: number, query: OrderQuery): Observable<PagedResult<OrderListItem>> {
+    let params = new HttpParams().set('page', query.page).set('pageSize', query.pageSize);
+
+    if (query.search?.trim()) {
+      params = params.set('search', query.search.trim());
+    }
+
+    if (query.dateFrom) {
+      params = params.set('dateFrom', query.dateFrom);
+    }
+
+    if (query.dateTo) {
+      params = params.set('dateTo', query.dateTo);
+    }
+
+    if (query.orderStatus !== undefined) {
+      params = params.set('orderStatus', query.orderStatus);
+    }
+
+    if (query.product?.trim()) {
+      params = params.set('product', query.product.trim());
+    }
+
+    if (query.sku?.trim()) {
+      params = params.set('sku', query.sku.trim());
+    }
+
+    if (query.orderSource !== undefined) {
+      params = params.set('orderSource', query.orderSource);
+    }
+
+    if (query.invoiceStatus !== undefined) {
+      params = params.set('invoiceStatus', query.invoiceStatus);
+    }
+
+    if (query.sort) {
+      params = params.set('sort', query.sort);
+    }
+
+    return this.http.get<PagedResult<OrderListItem>>(
+      `${this.apiUrl}/api/stores/${storeId}/orders`,
+      {
+        params,
+        withCredentials: true,
+      },
+    );
   }
 
   getOrder(storeId: number, orderId: number): Observable<OrderDetails> {
     return this.http.get<OrderDetails>(`${this.apiUrl}/api/stores/${storeId}/orders/${orderId}`, {
+      withCredentials: true,
+    });
+  }
+
+  updateOrderStatus(storeId: number, orderId: number, orderStatus: number): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/status`,
+      {
+        orderStatus,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  updateTrackingNumber(
+    storeId: number,
+    orderId: number,
+    trackingNumber: string | null,
+  ): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/tracking`,
+      {
+        trackingNumber,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  updateInvoiceStatus(storeId: number, orderId: number, invoiceStatus: number): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/invoice-status`,
+      {
+        invoiceStatus,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  updateLocationLink(
+    storeId: number,
+    orderId: number,
+    locationLink: string | null,
+  ): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/location-link`,
+      {
+        locationLink,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  updateFinalDecision(
+    storeId: number,
+    orderId: number,
+    finalDecision: string | null,
+  ): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/final-decision`,
+      {
+        finalDecision,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  getSummary(storeId: number, dateFrom?: string, dateTo?: string): Observable<OrderSummary> {
+    let params = new HttpParams();
+
+    if (dateFrom) {
+      params = params.set('dateFrom', dateFrom);
+    }
+
+    if (dateTo) {
+      params = params.set('dateTo', dateTo);
+    }
+
+    return this.http.get<OrderSummary>(`${this.apiUrl}/api/stores/${storeId}/orders/summary`, {
+      params,
       withCredentials: true,
     });
   }

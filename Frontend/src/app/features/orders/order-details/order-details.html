@@ -1,0 +1,383 @@
+<div class="min-h-screen bg-gray-100">
+  <header class="border-b bg-white">
+    <div class="flex items-center justify-between px-4 py-4 md:px-6">
+      <div>
+        <div class="text-xl font-bold tracking-wide">
+          SQUAD<span class="text-blue-600">21</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="backToOrders()"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        Back to Orders
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl p-4 md:p-6">
+    @if (loading()) {
+      <div class="rounded-xl border bg-white p-8 text-center shadow-sm">
+        <p class="text-sm text-gray-500">Loading order...</p>
+      </div>
+    } @else if (errorMessage() && !order()) {
+      <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+        <p class="text-sm text-red-700">
+          {{ errorMessage() }}
+        </p>
+      </div>
+    } @else if (order(); as order) {
+      <div class="mb-6">
+        <p class="text-sm text-gray-500">Order Details</p>
+
+        <h1 class="text-2xl font-bold text-gray-900">
+          {{ order.displayOrderId }}
+        </h1>
+
+        <p class="mt-1 text-sm text-gray-500">
+          {{ order.orderDateUtc | date: 'dd MMM yyyy, h:mm a' }}
+        </p>
+      </div>
+
+      @if (successMessage()) {
+        <div class="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+          {{ successMessage() }}
+        </div>
+      }
+
+      @if (errorMessage()) {
+        <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <div class="grid gap-5 lg:grid-cols-2">
+        <!-- Customer -->
+        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Customer</h2>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p class="text-xs text-gray-500">Name</p>
+
+              <p class="mt-1 font-medium">
+                {{ order.fullName }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Phone</p>
+
+              <p class="mt-1 font-medium">
+                {{ order.phone }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Address</p>
+
+              <p class="mt-1">
+                {{ order.addressLine1 }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">City / Country</p>
+
+              <p class="mt-1">
+                {{ order.city }},
+                {{ order.country }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Operational -->
+        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Operational Details</h2>
+
+          <div class="space-y-4">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Order Status </label>
+
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <select
+                  [value]="selectedStatus()"
+                  (change)="selectedStatus.set(+$any($event.target).value)"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="0">Confirmed</option>
+
+                  <option value="1">Shipped</option>
+
+                  <option value="2">Delivered</option>
+
+                  <option value="3">No Response</option>
+
+                  <option value="4">Return</option>
+
+                  <option value="5">Return In Process</option>
+
+                  <option value="6">Cancelled</option>
+
+                  <option value="7">Repeated Order</option>
+                </select>
+
+                <button
+                  type="button"
+                  (click)="saveStatus()"
+                  [disabled]="savingStatus() || selectedStatus() === order.orderStatus"
+                  class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  @if (savingStatus()) {
+                    Saving...
+                  } @else {
+                    Save
+                  }
+                </button>
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p class="text-xs text-gray-500">Current Status</p>
+
+                <p class="mt-1 font-medium">
+                  {{ getStatusName(order.orderStatus) }}
+                </p>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium text-gray-500">
+                  Tracking Number
+                </label>
+
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    maxlength="100"
+                    [value]="trackingValue()"
+                    (input)="trackingValue.set($any($event.target).value)"
+                    class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Tracking number"
+                  />
+
+                  <button
+                    type="button"
+                    (click)="saveTracking()"
+                    [disabled]="
+                      savingTracking() || trackingValue().trim() === (order.trackingNumber ?? '')
+                    "
+                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                  >
+                    @if (savingTracking()) {
+                      Saving...
+                    } @else {
+                      Save
+                    }
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-xs text-gray-500">Warehouse</p>
+
+                <p class="mt-1">
+                  {{ order.warehouseName || '—' }}
+                </p>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium text-gray-500"> Invoice Status </label>
+
+                <div class="flex gap-2">
+                  <select
+                    [value]="invoiceValue()"
+                    (change)="invoiceValue.set(+$any($event.target).value)"
+                    class="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="0">Paid</option>
+                    <option value="1">Unpaid</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    (click)="saveInvoiceStatus()"
+                    [disabled]="savingInvoice() || invoiceValue() === order.invoiceStatus"
+                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                  >
+                    @if (savingInvoice()) {
+                      Saving...
+                    } @else {
+                      Save
+                    }
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-xs text-gray-500">Order Source</p>
+
+                <p class="mt-1">
+                  {{ getSourceName(order.orderSource) }}
+                </p>
+              </div>
+
+              <div>
+                <p class="text-xs text-gray-500">Last Status Change</p>
+
+                <p class="mt-1">
+                  {{ order.lastStatusChangedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                </p>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium text-gray-500"> Final Decision </label>
+
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    maxlength="500"
+                    [value]="finalDecisionValue()"
+                    (input)="finalDecisionValue.set($any($event.target).value)"
+                    placeholder="Final decision"
+                    class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+
+                  <button
+                    type="button"
+                    (click)="saveFinalDecision()"
+                    [disabled]="
+                      savingFinalDecision() ||
+                      finalDecisionValue().trim() === (order.finalDecision ?? '')
+                    "
+                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                  >
+                    @if (savingFinalDecision()) {
+                      Saving...
+                    } @else {
+                      Save
+                    }
+                  </button>
+                </div>
+
+                <p class="mt-1 text-xs text-gray-400">Admin only</p>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium text-gray-500"> Location Link </label>
+
+                <div class="flex gap-2">
+                  <input
+                    type="url"
+                    maxlength="500"
+                    [value]="locationValue()"
+                    (input)="locationValue.set($any($event.target).value)"
+                    placeholder="https://..."
+                    class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+
+                  <button
+                    type="button"
+                    (click)="saveLocation()"
+                    [disabled]="
+                      savingLocation() || locationValue().trim() === (order.locationLink ?? '')
+                    "
+                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                  >
+                    @if (savingLocation()) {
+                      Saving...
+                    } @else {
+                      Save
+                    }
+                  </button>
+                </div>
+
+                @if (order.locationLink) {
+                  <a
+                    [href]="order.locationLink"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    Open saved location
+                  </a>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Products -->
+      <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div class="border-b border-gray-200 px-5 py-4">
+          <h2 class="text-lg font-semibold text-gray-900">Products</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+              <tr>
+                <th class="px-4 py-3">Product</th>
+
+                <th class="px-4 py-3">Variant</th>
+
+                <th class="px-4 py-3">SKU</th>
+
+                <th class="px-4 py-3">Quantity</th>
+
+                <th class="px-4 py-3">Unit Price</th>
+
+                <th class="px-4 py-3">Line Total</th>
+              </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100">
+              @for (item of order.items; track item.id) {
+                <tr>
+                  <td class="whitespace-nowrap px-4 py-3 font-medium">
+                    {{ item.productName }}
+                  </td>
+
+                  <td class="px-4 py-3">
+                    {{ item.variantName || '—' }}
+                  </td>
+
+                  <td class="px-4 py-3">
+                    {{ item.sku || '—' }}
+                  </td>
+
+                  <td class="px-4 py-3">
+                    {{ item.quantity }}
+                  </td>
+
+                  <td class="whitespace-nowrap px-4 py-3">
+                    {{ order.currency }}
+                    {{ item.unitPrice | number: '1.2-2' }}
+                  </td>
+
+                  <td class="whitespace-nowrap px-4 py-3">
+                    {{ order.currency }}
+                    {{ item.lineTotal | number: '1.2-2' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="border-t border-gray-200 px-5 py-4 text-right">
+          <span class="text-sm text-gray-500"> Total Amount: </span>
+
+          <span class="ml-2 text-lg font-bold text-gray-900">
+            {{ order.currency }}
+            {{ order.totalAmount | number: '1.2-2' }}
+          </span>
+        </div>
+      </section>
+    }
+  </main>
+</div>

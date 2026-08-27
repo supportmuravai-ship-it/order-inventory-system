@@ -62,3 +62,41 @@ export interface OrderDetails {
 
   items: OrderItem[];
 }
+
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface OrderQuery {
+  page: number;
+  pageSize: number;
+  search?: string;
+
+  dateFrom?: string;
+  dateTo?: string;
+
+  orderStatus?: number;
+  product?: string;
+  sku?: string;
+
+  orderSource?: number;
+  invoiceStatus?: number;
+
+  sort?: string;
+}
+
+export interface OrderSummary {
+  totalOrders: number;
+  confirmed: number;
+  shipped: number;
+  delivered: number;
+  noResponse: number;
+  return: number;
+  returnInProcess: number;
+  cancelled: number;
+  repeatedOrder: number;
+}
