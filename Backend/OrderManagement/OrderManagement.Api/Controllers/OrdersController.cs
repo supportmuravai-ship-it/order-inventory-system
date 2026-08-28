@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderManagement.Core.DTOs.Common;
 using OrderManagement.Core.DTOs.Orders;
+using OrderManagement.Core.Entities;
 using OrderManagement.Core.Enums;
 using OrderManagement.Core.Interfaces;
 using OrderManagement.Infrastructure.Data;
@@ -156,6 +157,18 @@ public class OrdersController : ControllerBase
                 x.InvoiceStatus == request.InvoiceStatus.Value);
         }
 
+        if (request.NeedsAttention == true)
+        {
+            var attentionThreshold =
+                DateTime.UtcNow.AddHours(-12);
+
+            query = query.Where(x =>
+                x.OrderStatus != OrderStatus.Delivered &&
+                x.OrderStatus != OrderStatus.Return &&
+                x.OrderStatus != OrderStatus.Cancelled &&
+                x.OrderStatus != OrderStatus.RepeatedOrder &&
+                x.LastStatusChangedAtUtc <= attentionThreshold);
+        }
 
         string[] allowedSortOptions =
         [
@@ -209,47 +222,77 @@ public class OrdersController : ControllerBase
                 .ThenByDescending(x => x.Id)
         };
 
-        var items = await sortedQuery
-        .Skip((request.Page - 1) * request.PageSize)
-        .Take(request.PageSize)
-        .Select(x => new OrderListItemDto
-        {
-            Id = x.Id,
-            DisplayOrderId = x.DisplayOrderId,
-            OrderDateUtc = x.OrderDateUtc,
+        var now = DateTime.UtcNow;
 
-            FullName = x.Customer.FullName,
-            Phone = x.Customer.Phone,
-            AddressLine1 = x.Customer.AddressLine1,
-            City = x.Customer.City,
-
-            TotalAmount = x.TotalAmount,
-            Currency = x.Currency,
-
-            TrackingNumber = x.TrackingNumber,
-            OrderStatus = x.OrderStatus,
-
-            LocationLink = x.LocationLink,
-            FinalDecision = x.FinalDecision,
-
-            OrderSource = x.OrderSource,
-            InvoiceStatus = x.InvoiceStatus,
-
-            Items = x.OrderItems
-                .OrderBy(item => item.Id)
-                .Select(item => new OrderItemDto
+        var orderRows = await sortedQuery
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(x => new
+            {
+                Order = new OrderListItemDto
                 {
-                    Id = item.Id,
-                    ProductName = item.ProductName,
-                    VariantName = item.VariantName,
-                    SKU = item.SKU,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.UnitPrice,
-                    LineTotal = item.LineTotal
-                })
-                .ToList()
-        })
-        .ToListAsync();
+                    Id = x.Id,
+                    DisplayOrderId = x.DisplayOrderId,
+                    OrderDateUtc = x.OrderDateUtc,
+
+                    FullName = x.Customer.FullName,
+                    Phone = x.Customer.Phone,
+                    AddressLine1 = x.Customer.AddressLine1,
+                    City = x.Customer.City,
+
+                    TotalAmount = x.TotalAmount,
+                    Currency = x.Currency,
+
+                    TrackingNumber = x.TrackingNumber,
+                    OrderStatus = x.OrderStatus,
+
+                    LocationLink = x.LocationLink,
+                    FinalDecision = x.FinalDecision,
+
+                    OrderSource = x.OrderSource,
+                    InvoiceStatus = x.InvoiceStatus,
+
+                    Items = x.OrderItems
+                        .OrderBy(item => item.Id)
+                        .Select(item => new OrderItemDto
+                        {
+                            Id = item.Id,
+                            ProductName = item.ProductName,
+                            VariantName = item.VariantName,
+                            SKU = item.SKU,
+                            Quantity = item.Quantity,
+                            UnitPrice = item.UnitPrice,
+                            LineTotal = item.LineTotal
+                        })
+                        .ToList()
+                },
+
+                x.LastStatusChangedAtUtc
+            })
+            .ToListAsync();
+
+        foreach (var row in orderRows)
+        {
+            var hoursInCurrentStatus =
+                (now - row.LastStatusChangedAtUtc).TotalHours;
+
+            row.Order.HoursInCurrentStatus =
+                Math.Max(0, hoursInCurrentStatus);
+
+            var isFinalStatus =
+                row.Order.OrderStatus == OrderStatus.Delivered ||
+                row.Order.OrderStatus == OrderStatus.Return ||
+                row.Order.OrderStatus == OrderStatus.Cancelled ||
+                row.Order.OrderStatus == OrderStatus.RepeatedOrder;
+
+            row.Order.NeedsAttention =
+                !isFinalStatus &&
+                hoursInCurrentStatus >= 12;
+        }
+
+        var items = orderRows
+            .Select(x => x.Order)
+            .ToList();
 
         var result = new PagedResultDto<OrderListItemDto>
         {
@@ -317,6 +360,8 @@ public class OrdersController : ControllerBase
                 x.OrderDateUtc < toExclusive);
         }
 
+        var attentionThreshold = DateTime.UtcNow.AddHours(-12);
+
         var summary = await query
             .GroupBy(_ => 1)
             .Select(group => new OrderSummaryDto
@@ -345,7 +390,14 @@ public class OrdersController : ControllerBase
                     x.OrderStatus == OrderStatus.Cancelled),
 
                 RepeatedOrder = group.Count(x =>
-                    x.OrderStatus == OrderStatus.RepeatedOrder)
+                    x.OrderStatus == OrderStatus.RepeatedOrder),
+
+                NeedsAttention = group.Count(x =>
+                    x.OrderStatus != OrderStatus.Delivered &&
+                    x.OrderStatus != OrderStatus.Return &&
+                    x.OrderStatus != OrderStatus.Cancelled &&
+                    x.OrderStatus != OrderStatus.RepeatedOrder &&
+                    x.LastStatusChangedAtUtc <= attentionThreshold)
             })
             .SingleOrDefaultAsync();
 
@@ -417,6 +469,40 @@ public class OrdersController : ControllerBase
 
                 LastStatusChangedAtUtc = x.LastStatusChangedAtUtc,
 
+                StatusHistory = x.StatusHistory
+                    .OrderByDescending(history => history.ChangedAtUtc)
+                    .Select(history => new OrderStatusHistoryDto
+                    {
+                        OldStatus = history.OldStatus,
+                        NewStatus = history.NewStatus,
+                        ChangedByUserId = history.ChangedByUserId,
+
+                        ChangedBy = _dbContext.Users
+                            .Where(user => user.Id == history.ChangedByUserId)
+                            .Select(user => user.Email ?? user.UserName ?? user.Id)
+                            .FirstOrDefault() ?? history.ChangedByUserId,
+
+                        ChangedAtUtc = history.ChangedAtUtc
+                    })
+                    .ToList(),
+
+                TrackingHistory = x.TrackingHistory
+                    .OrderByDescending(history => history.ChangedAtUtc)
+                    .Select(history => new TrackingHistoryDto
+                    {
+                        OldTrackingNumber = history.OldTrackingNumber,
+                        NewTrackingNumber = history.NewTrackingNumber,
+                        ChangedByUserId = history.ChangedByUserId,
+
+                        ChangedBy = _dbContext.Users
+                            .Where(user => user.Id == history.ChangedByUserId)
+                            .Select(user => user.Email ?? user.UserName ?? user.Id)
+                            .FirstOrDefault() ?? history.ChangedByUserId,
+
+                        ChangedAtUtc = history.ChangedAtUtc
+                    })
+                    .ToList(),
+
                 Items = x.OrderItems
                     .OrderBy(item => item.Id)
                     .Select(item => new OrderItemDto
@@ -441,6 +527,38 @@ public class OrdersController : ControllerBase
         order.OrderDateUtc = DateTime.SpecifyKind( order.OrderDateUtc, DateTimeKind.Utc);
 
         order.LastStatusChangedAtUtc = DateTime.SpecifyKind( order.LastStatusChangedAtUtc, DateTimeKind.Utc);
+
+        foreach (var history in order.StatusHistory)
+        {
+            history.ChangedAtUtc = DateTime.SpecifyKind(
+                history.ChangedAtUtc,
+                DateTimeKind.Utc);
+        }
+
+        foreach (var history in order.TrackingHistory)
+        {
+            history.ChangedAtUtc = DateTime.SpecifyKind(
+                history.ChangedAtUtc,
+                DateTimeKind.Utc);
+        }
+
+        var now = DateTime.UtcNow;
+
+        var hoursInCurrentStatus =
+            (now - order.LastStatusChangedAtUtc).TotalHours;
+
+        order.HoursInCurrentStatus =
+            Math.Max(0, hoursInCurrentStatus);
+
+        var isFinalStatus =
+            order.OrderStatus == OrderStatus.Delivered ||
+            order.OrderStatus == OrderStatus.Return ||
+            order.OrderStatus == OrderStatus.Cancelled ||
+            order.OrderStatus == OrderStatus.RepeatedOrder;
+
+        order.NeedsAttention =
+            !isFinalStatus &&
+            hoursInCurrentStatus >= 12;
 
         return Ok(order);
     }
@@ -493,11 +611,27 @@ public class OrdersController : ControllerBase
 
         var now = DateTime.UtcNow;
 
+        var statusHistory = new OrderStatusHistory
+        {
+            OrderId = order.Id,
+            OldStatus = order.OrderStatus,
+            NewStatus = request.OrderStatus,
+            ChangedByUserId = userId,
+            ChangedAtUtc = now
+        };
+
+        await using var transaction =
+            await _dbContext.Database.BeginTransactionAsync();
+
+        _dbContext.OrderStatusHistories.Add(statusHistory);
+
         order.OrderStatus = request.OrderStatus;
         order.LastStatusChangedAtUtc = now;
         order.UpdatedAtUtc = now;
 
         await _dbContext.SaveChangesAsync();
+
+        await transaction.CommitAsync();
 
         return NoContent();
     }
@@ -555,10 +689,28 @@ public class OrdersController : ControllerBase
             return NoContent();
         }
 
+        var now = DateTime.UtcNow;
+
+        var trackingHistory = new TrackingHistory
+        {
+            OrderId = order.Id,
+            OldTrackingNumber = order.TrackingNumber,
+            NewTrackingNumber = trackingNumber,
+            ChangedByUserId = userId,
+            ChangedAtUtc = now
+        };
+
+        await using var transaction =
+            await _dbContext.Database.BeginTransactionAsync();
+
+        _dbContext.TrackingHistories.Add(trackingHistory);
+
         order.TrackingNumber = trackingNumber;
-        order.UpdatedAtUtc = DateTime.UtcNow;
+        order.UpdatedAtUtc = now;
 
         await _dbContext.SaveChangesAsync();
+
+        await transaction.CommitAsync();
 
         return NoContent(); // The request was successful, and there's no response body to return
     }

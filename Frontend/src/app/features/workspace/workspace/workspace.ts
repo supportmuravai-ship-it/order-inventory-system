@@ -61,8 +61,10 @@ export class WorkspaceComponent implements OnInit {
   readonly locationEditValue = signal('');
 
   readonly editingFinalDecisionOrderId = signal<number | null>(null);
-readonly savingFinalDecisionOrderId = signal<number | null>(null);
-readonly finalDecisionEditValue = signal('');
+  readonly savingFinalDecisionOrderId = signal<number | null>(null);
+  readonly finalDecisionEditValue = signal('');
+
+  readonly needsAttentionOnly = signal(false);
 
   readonly summary = signal<OrderSummary>({
     totalOrders: 0,
@@ -74,6 +76,7 @@ readonly finalDecisionEditValue = signal('');
     returnInProcess: 0,
     cancelled: 0,
     repeatedOrder: 0,
+    needsAttention: 0,
   });
 
   readonly summaryLoading = signal(true);
@@ -114,6 +117,8 @@ readonly finalDecisionEditValue = signal('');
         orderSource: this.selectedSource(),
 
         invoiceStatus: this.selectedInvoiceStatus(),
+
+        needsAttention: this.needsAttentionOnly() ? true : undefined,
 
         sort: this.sort(),
       })
@@ -229,10 +234,25 @@ readonly finalDecisionEditValue = signal('');
     this.selectedInvoiceStatus.set(undefined);
 
     this.page.set(1);
+    this.needsAttentionOnly.set(false);
 
     this.loadOrders();
     this.loadSummary();
   }
+
+  showNeedsAttention(): void {
+  this.needsAttentionOnly.set(true);
+  this.page.set(1);
+
+  this.loadOrders();
+}
+
+showAllOrders(): void {
+  this.needsAttentionOnly.set(false);
+  this.page.set(1);
+
+  this.loadOrders();
+}
 
   changeSort(event: Event): void {
     const select = event.target as HTMLSelectElement;

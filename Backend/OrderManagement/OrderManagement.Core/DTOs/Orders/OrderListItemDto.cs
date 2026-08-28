@@ -34,5 +34,8 @@ public class OrderListItemDto
 
     public InvoiceStatus InvoiceStatus { get; set; }
 
+    public bool NeedsAttention { get; set; }
+
+    public double HoursInCurrentStatus { get; set; }
     public List<OrderItemDto> Items { get; set; } = [];
 }

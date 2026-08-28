@@ -53,6 +53,10 @@ export class OrdersService {
     if (query.invoiceStatus !== undefined) {
       params = params.set('invoiceStatus', query.invoiceStatus);
     }
+    
+    if (query.needsAttention !== undefined) {
+  params = params.set('needsAttention', query.needsAttention);
+}
 
     if (query.sort) {
       params = params.set('sort', query.sort);

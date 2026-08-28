@@ -30,7 +30,26 @@ export interface OrderListItem {
   orderSource: number;
   invoiceStatus: number;
 
+  needsAttention: boolean;
+  hoursInCurrentStatus: number;
+
   items: OrderItem[];
+}
+
+export interface OrderStatusHistory {
+  oldStatus: number;
+  newStatus: number;
+  changedByUserId: string;
+  changedBy: string;
+  changedAtUtc: string;
+}
+
+export interface TrackingHistory {
+  oldTrackingNumber: string | null;
+  newTrackingNumber: string | null;
+  changedByUserId: string;
+  changedBy: string;
+  changedAtUtc: string;
 }
 
 export interface OrderDetails {
@@ -60,6 +79,12 @@ export interface OrderDetails {
   warehouseName: string | null;
   lastStatusChangedAtUtc: string;
 
+  needsAttention: boolean;
+  hoursInCurrentStatus: number;
+
+  statusHistory: OrderStatusHistory[];
+  trackingHistory: TrackingHistory[];
+
   items: OrderItem[];
 }
 
@@ -87,6 +112,7 @@ export interface OrderQuery {
   invoiceStatus?: number;
 
   sort?: string;
+  needsAttention?: boolean;
 }
 
 export interface OrderSummary {
@@ -99,4 +125,5 @@ export interface OrderSummary {
   returnInProcess: number;
   cancelled: number;
   repeatedOrder: number;
+  needsAttention: number;
 }

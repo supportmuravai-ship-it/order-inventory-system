@@ -19,4 +19,6 @@ public class OrderSummaryDto
     public int Cancelled { get; set; }
 
     public int RepeatedOrder { get; set; }
+
+    public int NeedsAttention { get; set; }
 }

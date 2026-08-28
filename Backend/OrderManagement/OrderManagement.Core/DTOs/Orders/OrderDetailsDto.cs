@@ -43,6 +43,14 @@ public class OrderDetailsDto
     public DateTime LastStatusChangedAtUtc { get; set; }
 
     public List<OrderItemDto> Items { get; set; } = [];
+
+    public bool NeedsAttention { get; set; }
+
+    public double HoursInCurrentStatus { get; set; }
+
+    public List<OrderStatusHistoryDto> StatusHistory { get; set; } = [];
+
+    public List<TrackingHistoryDto> TrackingHistory { get; set; } = [];
+
 }
 
-// For Phase 2 this is enough. We are still not adding status history, tracking history, tags, notes, or attachments.

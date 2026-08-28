@@ -25,4 +25,6 @@ public class OrderQueryRequest
     public InvoiceStatus? InvoiceStatus { get; set; }
 
     public string Sort { get; set; } = "newest";
+
+    public bool? NeedsAttention { get; set; }
 }

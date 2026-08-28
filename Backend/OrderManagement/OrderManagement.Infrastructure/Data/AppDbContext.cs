@@ -28,7 +28,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<WarehouseLocation> WarehouseLocations
         => Set<WarehouseLocation>();
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    public DbSet<OrderStatusHistory> OrderStatusHistories
+    => Set<OrderStatusHistory>();
+
+    public DbSet<TrackingHistory> TrackingHistories
+    => Set<TrackingHistory>();
+
+    protected override void OnModelCreating(ModelBuilder builder) // OnModelCreating() is called automatically by EF Core
     {
         base.OnModelCreating(builder);
 
@@ -38,6 +44,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureOrder(builder);
         ConfigureOrderItem(builder);
         ConfigureWarehouseLocation(builder);
+        ConfigureOrderStatusHistory(builder);
+        ConfigureTrackingHistory(builder);
     }
 
     private static void ConfigureStore(ModelBuilder builder)
@@ -242,6 +250,60 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
             entity.HasIndex(x => x.Code)
                 .IsUnique();
+        });
+    }
+
+    private static void ConfigureOrderStatusHistory(
+    ModelBuilder builder)
+    {
+        builder.Entity<OrderStatusHistory>(entity =>
+        {
+            entity.Property(x => x.ChangedByUserId)
+                .HasMaxLength(450)
+                .IsRequired();
+
+            entity.HasOne(x => x.Order)
+                .WithMany(x => x.StatusHistory)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.OrderId);
+
+            entity.HasIndex(x => new
+            {
+                x.OrderId,
+                x.ChangedAtUtc
+            });
+        });
+    }
+
+    private static void ConfigureTrackingHistory(
+    ModelBuilder builder)
+    {
+        builder.Entity<TrackingHistory>(entity =>
+        {
+            entity.Property(x => x.OldTrackingNumber)
+                .HasMaxLength(200);
+
+            entity.Property(x => x.NewTrackingNumber)
+                .HasMaxLength(200);
+
+            entity.Property(x => x.ChangedByUserId)
+                .HasMaxLength(450)
+                .IsRequired();
+
+            entity.HasOne(x => x.Order)
+                .WithMany(x => x.TrackingHistory)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.OrderId);
+
+            entity.HasIndex(x => new
+            {
+                x.OrderId,
+                x.ChangedAtUtc
+            });
         });
     }
 }

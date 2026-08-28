@@ -53,18 +53,10 @@ public class Order
 
     public ICollection<OrderItem> OrderItems { get; set; }
         = new List<OrderItem>();
+
+    public ICollection<OrderStatusHistory> StatusHistory { get; set; }
+    = new List<OrderStatusHistory>();
+
+    public ICollection<TrackingHistory> TrackingHistory { get; set; }
+    = new List<TrackingHistory>();
 }
-
-//what is deliberately absent:
-
-//AirwayBill
-//Tag string
-//ShoaibNote string
-//TrenvoNote string
-//StatusHistory
-//TrackingHistory
-//Attachments
-//Courier
-//Inventory quantities
-
-//That is intentional.Your Phase 2 brief says those future systems must not be prematurely represented with bad temporary schema.
