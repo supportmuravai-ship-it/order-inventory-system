@@ -48,6 +48,18 @@ public class OrderDetailsDto
 
     public double HoursInCurrentStatus { get; set; }
 
+    public string? ShoaibNote { get; set; }
+
+    public DateTime? ShoaibNoteUpdatedAtUtc { get; set; }
+
+    public string? ShoaibNoteUpdatedBy { get; set; }
+
+    public string? TrenvoNote { get; set; }
+
+    public DateTime? TrenvoNoteUpdatedAtUtc { get; set; }
+
+    public string? TrenvoNoteUpdatedBy { get; set; }
+
     public List<OrderStatusHistoryDto> StatusHistory { get; set; } = [];
 
     public List<TrackingHistoryDto> TrackingHistory { get; set; } = [];

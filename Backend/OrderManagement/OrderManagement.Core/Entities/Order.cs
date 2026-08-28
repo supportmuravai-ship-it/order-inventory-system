@@ -59,4 +59,6 @@ public class Order
 
     public ICollection<TrackingHistory> TrackingHistory { get; set; }
     = new List<TrackingHistory>();
+
+    public ICollection<OrderNote> Notes { get; set; } = new List<OrderNote>();
 }

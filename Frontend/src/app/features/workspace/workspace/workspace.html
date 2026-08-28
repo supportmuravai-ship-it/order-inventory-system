@@ -140,13 +140,22 @@
               <button
                 type="button"
                 (click)="showNeedsAttention()"
-                class="rounded-xl border border-red-300 bg-red-50 p-4 text-left transition hover:bg-red-100"
+                [ngClass]="
+                  needsAttentionOnly()
+                    ? 'border-red-500 bg-red-100 ring-2 ring-red-200'
+                    : 'border-red-300 bg-red-50 hover:bg-red-100'
+                "
+                class="rounded-xl border p-4 text-left transition"
               >
                 <p class="text-xs font-medium uppercase text-red-700">Needs Attention</p>
 
                 <p class="mt-2 text-2xl font-bold text-red-900">
                   {{ summary().needsAttention }}
                 </p>
+
+                @if (needsAttentionOnly()) {
+                  <p class="mt-1 text-xs font-medium text-red-600">Filter active</p>
+                }
               </button>
             </div>
           }
@@ -766,15 +775,145 @@
                         }
                       </td>
 
-                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
+                      <td class="px-4 py-3 text-gray-600">
                         @if (first) {
-                          —
+                          @if (editingShoaibNoteOrderId() === order.id) {
+                            <div class="w-72">
+                              <textarea
+                                rows="3"
+                                maxlength="2000"
+                                [value]="shoaibNoteEditValue()"
+                                (input)="shoaibNoteEditValue.set($any($event.target).value)"
+                                [disabled]="savingShoaibNoteOrderId() === order.id"
+                                placeholder="Shoaib's Note"
+                                class="w-full resize-y rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                              ></textarea>
+
+                              <div class="mt-2 flex gap-2">
+                                <button
+                                  type="button"
+                                  (click)="saveShoaibNote(order)"
+                                  [disabled]="
+                                    savingShoaibNoteOrderId() === order.id ||
+                                    shoaibNoteEditValue().trim() === (order.shoaibNote ?? '')
+                                  "
+                                  class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                                >
+                                  @if (savingShoaibNoteOrderId() === order.id) {
+                                    Saving...
+                                  } @else {
+                                    Save
+                                  }
+                                </button>
+
+                                <button
+                                  type="button"
+                                  (click)="cancelShoaibNoteEdit()"
+                                  [disabled]="savingShoaibNoteOrderId() === order.id"
+                                  class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                                >
+                                  Cancel
+                                </button>
+
+                                @if (order.shoaibNote) {
+                                  <button
+                                    type="button"
+                                    (click)="shoaibNoteEditValue.set('')"
+                                    [disabled]="savingShoaibNoteOrderId() === order.id"
+                                    class="rounded-lg border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40"
+                                  >
+                                    Clear
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="startShoaibNoteEdit(order)"
+                              class="block max-w-64 rounded px-2 py-1 text-left hover:bg-blue-50 hover:text-blue-600"
+                              title="Click to edit Shoaib's Note"
+                            >
+                              @if (order.shoaibNote) {
+                                <span class="block whitespace-normal">
+                                  {{ order.shoaibNote }}
+                                </span>
+                              } @else {
+                                <span class="text-gray-400"> Add note </span>
+                              }
+                            </button>
+                          }
                         }
                       </td>
 
-                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
+                      <td class="px-4 py-3 text-gray-600">
                         @if (first) {
-                          —
+                          @if (editingTrenvoNoteOrderId() === order.id) {
+                            <div class="w-72">
+                              <textarea
+                                rows="3"
+                                maxlength="2000"
+                                [value]="trenvoNoteEditValue()"
+                                (input)="trenvoNoteEditValue.set($any($event.target).value)"
+                                [disabled]="savingTrenvoNoteOrderId() === order.id"
+                                placeholder="Trenvo Note"
+                                class="w-full resize-y rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                              ></textarea>
+
+                              <div class="mt-2 flex gap-2">
+                                <button
+                                  type="button"
+                                  (click)="saveTrenvoNote(order)"
+                                  [disabled]="
+                                    savingTrenvoNoteOrderId() === order.id ||
+                                    trenvoNoteEditValue().trim() === (order.trenvoNote ?? '')
+                                  "
+                                  class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                                >
+                                  @if (savingTrenvoNoteOrderId() === order.id) {
+                                    Saving...
+                                  } @else {
+                                    Save
+                                  }
+                                </button>
+
+                                <button
+                                  type="button"
+                                  (click)="cancelTrenvoNoteEdit()"
+                                  [disabled]="savingTrenvoNoteOrderId() === order.id"
+                                  class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                                >
+                                  Cancel
+                                </button>
+
+                                @if (order.trenvoNote) {
+                                  <button
+                                    type="button"
+                                    (click)="trenvoNoteEditValue.set('')"
+                                    [disabled]="savingTrenvoNoteOrderId() === order.id"
+                                    class="rounded-lg border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40"
+                                  >
+                                    Clear
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="startTrenvoNoteEdit(order)"
+                              class="block max-w-64 rounded px-2 py-1 text-left hover:bg-blue-50 hover:text-blue-600"
+                              title="Click to edit Trenvo Note"
+                            >
+                              @if (order.trenvoNote) {
+                                <span class="block whitespace-normal">
+                                  {{ order.trenvoNote }}
+                                </span>
+                              } @else {
+                                <span class="text-gray-400"> Add note </span>
+                              }
+                            </button>
+                          }
                         }
                       </td>
 

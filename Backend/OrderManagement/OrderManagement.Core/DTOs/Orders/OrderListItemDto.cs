@@ -34,6 +34,9 @@ public class OrderListItemDto
 
     public InvoiceStatus InvoiceStatus { get; set; }
 
+    public string? ShoaibNote { get; set; }
+
+    public string? TrenvoNote { get; set; }
     public bool NeedsAttention { get; set; }
 
     public double HoursInCurrentStatus { get; set; }

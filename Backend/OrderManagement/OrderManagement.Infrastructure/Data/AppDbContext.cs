@@ -34,6 +34,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TrackingHistory> TrackingHistories
     => Set<TrackingHistory>();
 
+    public DbSet<OrderNote> OrderNotes => Set<OrderNote>();
+
     protected override void OnModelCreating(ModelBuilder builder) // OnModelCreating() is called automatically by EF Core
     {
         base.OnModelCreating(builder);
@@ -46,6 +48,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureWarehouseLocation(builder);
         ConfigureOrderStatusHistory(builder);
         ConfigureTrackingHistory(builder);
+        ConfigureOrderNotes(builder);
     }
 
     private static void ConfigureStore(ModelBuilder builder)
@@ -304,6 +307,47 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 x.OrderId,
                 x.ChangedAtUtc
             });
+        });
+    }
+
+    private static void ConfigureOrderNotes(ModelBuilder builder)
+    {
+        builder.Entity<OrderNote>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.NoteType)
+                .IsRequired();
+
+            entity.Property(x => x.Text)
+                .HasMaxLength(2000)
+                .IsRequired();
+
+            entity.Property(x => x.CreatedByUserId)
+                .HasMaxLength(450)
+                .IsRequired();
+
+            entity.Property(x => x.CreatedAtUtc)
+                .IsRequired();
+
+            entity.Property(x => x.UpdatedAtUtc)
+                .IsRequired();
+
+            entity.Property(x => x.UpdatedByUserId)
+                .HasMaxLength(450)
+                .IsRequired();
+
+            entity.HasOne(x => x.Order)
+                .WithMany(x => x.Notes)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.OrderId,
+                x.NoteType
+            })
+            .IsUnique();
         });
     }
 }

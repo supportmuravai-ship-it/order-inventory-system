@@ -66,6 +66,14 @@ export class WorkspaceComponent implements OnInit {
 
   readonly needsAttentionOnly = signal(false);
 
+  readonly editingShoaibNoteOrderId = signal<number | null>(null);
+readonly savingShoaibNoteOrderId = signal<number | null>(null);
+readonly shoaibNoteEditValue = signal('');
+
+readonly editingTrenvoNoteOrderId = signal<number | null>(null);
+readonly savingTrenvoNoteOrderId = signal<number | null>(null);
+readonly trenvoNoteEditValue = signal('');
+
   readonly summary = signal<OrderSummary>({
     totalOrders: 0,
     confirmed: 0,
@@ -642,4 +650,153 @@ showAllOrders(): void {
   getInvoiceName(status: number): string {
     return status === 0 ? 'Paid' : 'Unpaid';
   }
+
+
+  startShoaibNoteEdit(order: OrderListItem): void {
+  this.editingShoaibNoteOrderId.set(order.id);
+  this.shoaibNoteEditValue.set(order.shoaibNote ?? '');
+  this.statusUpdateMessage.set('');
+}
+
+cancelShoaibNoteEdit(): void {
+  this.editingShoaibNoteOrderId.set(null);
+  this.shoaibNoteEditValue.set('');
+}
+
+saveShoaibNote(order: OrderListItem): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
+  }
+
+  const value = this.shoaibNoteEditValue().trim();
+  const text = value === '' ? null : value;
+
+  if (text === order.shoaibNote) {
+    this.cancelShoaibNoteEdit();
+    return;
+  }
+
+  this.savingShoaibNoteOrderId.set(order.id);
+  this.errorMessage.set('');
+  this.statusUpdateMessage.set('');
+
+  this.ordersService
+    .updateShoaibNote(
+      store.id,
+      order.id,
+      text,
+    )
+    .subscribe({
+      next: () => {
+        this.savingShoaibNoteOrderId.set(null);
+        this.editingShoaibNoteOrderId.set(null);
+        this.shoaibNoteEditValue.set('');
+
+        this.statusUpdateMessage.set(
+          `${order.displayOrderId} Shoaib's Note updated successfully.`,
+        );
+
+        this.loadOrders();
+      },
+
+      error: (error: HttpErrorResponse) => {
+        this.savingShoaibNoteOrderId.set(null);
+
+        if (error.status === 403) {
+          this.errorMessage.set(
+            "You are not allowed to update Shoaib's Note.",
+          );
+          return;
+        }
+
+        if (
+          typeof error.error === 'string' &&
+          error.error.trim()
+        ) {
+          this.errorMessage.set(error.error);
+          return;
+        }
+
+        this.errorMessage.set(
+          "Could not update Shoaib's Note.",
+        );
+      },
+    });
+}
+
+startTrenvoNoteEdit(order: OrderListItem): void {
+  this.editingTrenvoNoteOrderId.set(order.id);
+  this.trenvoNoteEditValue.set(order.trenvoNote ?? '');
+  this.statusUpdateMessage.set('');
+}
+
+cancelTrenvoNoteEdit(): void {
+  this.editingTrenvoNoteOrderId.set(null);
+  this.trenvoNoteEditValue.set('');
+}
+
+saveTrenvoNote(order: OrderListItem): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
+  }
+
+  const value = this.trenvoNoteEditValue().trim();
+  const text = value === '' ? null : value;
+
+  if (text === order.trenvoNote) {
+    this.cancelTrenvoNoteEdit();
+    return;
+  }
+
+  this.savingTrenvoNoteOrderId.set(order.id);
+  this.errorMessage.set('');
+  this.statusUpdateMessage.set('');
+
+  this.ordersService
+    .updateTrenvoNote(
+      store.id,
+      order.id,
+      text,
+    )
+    .subscribe({
+      next: () => {
+        this.savingTrenvoNoteOrderId.set(null);
+        this.editingTrenvoNoteOrderId.set(null);
+        this.trenvoNoteEditValue.set('');
+
+        this.statusUpdateMessage.set(
+          `${order.displayOrderId} Trenvo Note updated successfully.`,
+        );
+
+        this.loadOrders();
+      },
+
+      error: (error: HttpErrorResponse) => {
+        this.savingTrenvoNoteOrderId.set(null);
+
+        if (error.status === 403) {
+          this.errorMessage.set(
+            'You are not allowed to update Trenvo Note.',
+          );
+          return;
+        }
+
+        if (
+          typeof error.error === 'string' &&
+          error.error.trim()
+        ) {
+          this.errorMessage.set(error.error);
+          return;
+        }
+
+        this.errorMessage.set(
+          'Could not update Trenvo Note.',
+        );
+      },
+    });
+}
 }

@@ -32,16 +32,22 @@ export class OrderDetailsComponent implements OnInit {
   readonly selectedStatus = signal<number | null>(null);
 
   readonly savingTracking = signal(false);
-readonly trackingValue = signal('');
+  readonly trackingValue = signal('');
 
-readonly savingInvoice = signal(false);
-readonly invoiceValue = signal<number | null>(null);
+  readonly savingInvoice = signal(false);
+  readonly invoiceValue = signal<number | null>(null);
 
-readonly savingLocation = signal(false);
-readonly locationValue = signal('');
+  readonly savingLocation = signal(false);
+  readonly locationValue = signal('');
 
-readonly savingFinalDecision = signal(false);
-readonly finalDecisionValue = signal('');
+  readonly savingFinalDecision = signal(false);
+  readonly finalDecisionValue = signal('');
+
+  readonly savingShoaibNote = signal(false);
+  readonly shoaibNoteValue = signal('');
+
+  readonly savingTrenvoNote = signal(false);
+  readonly trenvoNoteValue = signal('');
 
   ngOnInit(): void {
     this.loadOrder();
@@ -68,16 +74,19 @@ readonly finalDecisionValue = signal('');
 
     this.ordersService.getOrder(store.id, orderId).subscribe({
       next: (order) => {
-  this.order.set(order);
+        this.order.set(order);
 
-  this.selectedStatus.set(order.orderStatus);
-  this.trackingValue.set(order.trackingNumber ?? '');
-  this.invoiceValue.set(order.invoiceStatus);
-  this.locationValue.set(order.locationLink ?? '');
-  this.finalDecisionValue.set(order.finalDecision ?? '');
+        this.selectedStatus.set(order.orderStatus);
+        this.trackingValue.set(order.trackingNumber ?? '');
+        this.invoiceValue.set(order.invoiceStatus);
+        this.locationValue.set(order.locationLink ?? '');
+        this.finalDecisionValue.set(order.finalDecision ?? '');
 
-  this.loading.set(false);
-},
+        this.shoaibNoteValue.set(order.shoaibNote ?? '');
+        this.trenvoNoteValue.set(order.trenvoNote ?? '');
+
+        this.loading.set(false);
+      },
 
       error: (error: HttpErrorResponse) => {
         this.loading.set(false);
@@ -136,7 +145,6 @@ readonly finalDecisionValue = signal('');
       },
     });
   }
-  
 
   backToOrders(): void {
     this.router.navigate(['/workspace']);
@@ -172,41 +180,31 @@ readonly finalDecisionValue = signal('');
     return status === 0 ? 'Paid' : 'Unpaid';
   }
 
-
   saveTracking(): void {
-  const store = this.authService.selectedStore();
-  const order = this.order();
+    const store = this.authService.selectedStore();
+    const order = this.order();
 
-  if (!store || !order) {
-    return;
-  }
+    if (!store || !order) {
+      return;
+    }
 
-  const value = this.trackingValue().trim();
+    const value = this.trackingValue().trim();
 
-  const trackingNumber =
-    value === '' ? null : value;
+    const trackingNumber = value === '' ? null : value;
 
-  if (trackingNumber === order.trackingNumber) {
-    return;
-  }
+    if (trackingNumber === order.trackingNumber) {
+      return;
+    }
 
-  this.savingTracking.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
+    this.savingTracking.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
-  this.ordersService
-    .updateTrackingNumber(
-      store.id,
-      order.id,
-      trackingNumber,
-    )
-    .subscribe({
+    this.ordersService.updateTrackingNumber(store.id, order.id, trackingNumber).subscribe({
       next: () => {
         this.savingTracking.set(false);
 
-        this.successMessage.set(
-          'Tracking number updated successfully.',
-        );
+        this.successMessage.set('Tracking number updated successfully.');
 
         this.loadOrder();
       },
@@ -215,63 +213,42 @@ readonly finalDecisionValue = signal('');
         this.savingTracking.set(false);
 
         if (error.status === 403) {
-          this.errorMessage.set(
-            'You are not allowed to update the tracking number.',
-          );
+          this.errorMessage.set('You are not allowed to update the tracking number.');
           return;
         }
 
-        if (
-          typeof error.error === 'string' &&
-          error.error.trim()
-        ) {
+        if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set(
-          'Could not update tracking number.',
-        );
+        this.errorMessage.set('Could not update tracking number.');
       },
     });
-}
-
-
-
-saveInvoiceStatus(): void {
-  const store = this.authService.selectedStore();
-  const order = this.order();
-  const invoiceStatus = this.invoiceValue();
-
-  if (
-    !store ||
-    !order ||
-    invoiceStatus === null
-  ) {
-    return;
   }
 
-  if (invoiceStatus === order.invoiceStatus) {
-    return;
-  }
+  saveInvoiceStatus(): void {
+    const store = this.authService.selectedStore();
+    const order = this.order();
+    const invoiceStatus = this.invoiceValue();
 
-  this.savingInvoice.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
+    if (!store || !order || invoiceStatus === null) {
+      return;
+    }
 
-  this.ordersService
-    .updateInvoiceStatus(
-      store.id,
-      order.id,
-      invoiceStatus,
-    )
-    .subscribe({
+    if (invoiceStatus === order.invoiceStatus) {
+      return;
+    }
+
+    this.savingInvoice.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.ordersService.updateInvoiceStatus(store.id, order.id, invoiceStatus).subscribe({
       next: () => {
         this.savingInvoice.set(false);
 
-        this.successMessage.set(
-          'Invoice status updated successfully.',
-        );
+        this.successMessage.set('Invoice status updated successfully.');
 
         this.loadOrder();
       },
@@ -280,63 +257,45 @@ saveInvoiceStatus(): void {
         this.savingInvoice.set(false);
 
         if (error.status === 403) {
-          this.errorMessage.set(
-            'You are not allowed to update invoice status.',
-          );
+          this.errorMessage.set('You are not allowed to update invoice status.');
           return;
         }
 
-        if (
-          typeof error.error === 'string' &&
-          error.error.trim()
-        ) {
+        if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set(
-          'Could not update invoice status.',
-        );
+        this.errorMessage.set('Could not update invoice status.');
       },
     });
-}
-
-
-
-saveLocation(): void {
-  const store = this.authService.selectedStore();
-  const order = this.order();
-
-  if (!store || !order) {
-    return;
   }
 
-  const value = this.locationValue().trim();
+  saveLocation(): void {
+    const store = this.authService.selectedStore();
+    const order = this.order();
 
-  const locationLink =
-    value === '' ? null : value;
+    if (!store || !order) {
+      return;
+    }
 
-  if (locationLink === order.locationLink) {
-    return;
-  }
+    const value = this.locationValue().trim();
 
-  this.savingLocation.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
+    const locationLink = value === '' ? null : value;
 
-  this.ordersService
-    .updateLocationLink(
-      store.id,
-      order.id,
-      locationLink,
-    )
-    .subscribe({
+    if (locationLink === order.locationLink) {
+      return;
+    }
+
+    this.savingLocation.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.ordersService.updateLocationLink(store.id, order.id, locationLink).subscribe({
       next: () => {
         this.savingLocation.set(false);
 
-        this.successMessage.set(
-          'Location link updated successfully.',
-        );
+        this.successMessage.set('Location link updated successfully.');
 
         this.loadOrder();
       },
@@ -345,63 +304,45 @@ saveLocation(): void {
         this.savingLocation.set(false);
 
         if (error.status === 403) {
-          this.errorMessage.set(
-            'You are not allowed to update the location link.',
-          );
+          this.errorMessage.set('You are not allowed to update the location link.');
           return;
         }
 
-        if (
-          typeof error.error === 'string' &&
-          error.error.trim()
-        ) {
+        if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set(
-          'Could not update location link.',
-        );
+        this.errorMessage.set('Could not update location link.');
       },
     });
-}
-
-
-saveFinalDecision(): void {
-  const store = this.authService.selectedStore();
-  const order = this.order();
-
-  if (!store || !order) {
-    return;
   }
 
-  const value =
-    this.finalDecisionValue().trim();
+  saveFinalDecision(): void {
+    const store = this.authService.selectedStore();
+    const order = this.order();
 
-  const finalDecision =
-    value === '' ? null : value;
+    if (!store || !order) {
+      return;
+    }
 
-  if (finalDecision === order.finalDecision) {
-    return;
-  }
+    const value = this.finalDecisionValue().trim();
 
-  this.savingFinalDecision.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
+    const finalDecision = value === '' ? null : value;
 
-  this.ordersService
-    .updateFinalDecision(
-      store.id,
-      order.id,
-      finalDecision,
-    )
-    .subscribe({
+    if (finalDecision === order.finalDecision) {
+      return;
+    }
+
+    this.savingFinalDecision.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.ordersService.updateFinalDecision(store.id, order.id, finalDecision).subscribe({
       next: () => {
         this.savingFinalDecision.set(false);
 
-        this.successMessage.set(
-          'Final decision updated successfully.',
-        );
+        this.successMessage.set('Final decision updated successfully.');
 
         this.loadOrder();
       },
@@ -410,8 +351,66 @@ saveFinalDecision(): void {
         this.savingFinalDecision.set(false);
 
         if (error.status === 403) {
+          this.errorMessage.set('Only an Admin can update the final decision.');
+          return;
+        }
+
+        if (typeof error.error === 'string' && error.error.trim()) {
+          this.errorMessage.set(error.error);
+          return;
+        }
+
+        this.errorMessage.set('Could not update final decision.');
+      },
+    });
+  }
+
+  saveShoaibNote(): void {
+  const store = this.authService.selectedStore();
+  const order = this.order();
+
+  if (!store || !order) {
+    return;
+  }
+
+  const value = this.shoaibNoteValue().trim();
+
+  const text =
+    value === '' ? null : value;
+
+  if (text === order.shoaibNote) {
+    return;
+  }
+
+  this.savingShoaibNote.set(true);
+  this.errorMessage.set('');
+  this.successMessage.set('');
+
+  this.ordersService
+    .updateShoaibNote(
+      store.id,
+      order.id,
+      text,
+    )
+    .subscribe({
+      next: () => {
+        this.savingShoaibNote.set(false);
+
+        this.successMessage.set(
+          text === null
+            ? "Shoaib's Note cleared successfully."
+            : "Shoaib's Note updated successfully.",
+        );
+
+        this.loadOrder();
+      },
+
+      error: (error: HttpErrorResponse) => {
+        this.savingShoaibNote.set(false);
+
+        if (error.status === 403) {
           this.errorMessage.set(
-            'Only an Admin can update the final decision.',
+            "You are not allowed to update Shoaib's Note.",
           );
           return;
         }
@@ -425,11 +424,74 @@ saveFinalDecision(): void {
         }
 
         this.errorMessage.set(
-          'Could not update final decision.',
+          "Could not update Shoaib's Note.",
         );
       },
     });
 }
 
+saveTrenvoNote(): void {
+  const store = this.authService.selectedStore();
+  const order = this.order();
 
+  if (!store || !order) {
+    return;
+  }
+
+  const value = this.trenvoNoteValue().trim();
+
+  const text =
+    value === '' ? null : value;
+
+  if (text === order.trenvoNote) {
+    return;
+  }
+
+  this.savingTrenvoNote.set(true);
+  this.errorMessage.set('');
+  this.successMessage.set('');
+
+  this.ordersService
+    .updateTrenvoNote(
+      store.id,
+      order.id,
+      text,
+    )
+    .subscribe({
+      next: () => {
+        this.savingTrenvoNote.set(false);
+
+        this.successMessage.set(
+          text === null
+            ? 'Trenvo Note cleared successfully.'
+            : 'Trenvo Note updated successfully.',
+        );
+
+        this.loadOrder();
+      },
+
+      error: (error: HttpErrorResponse) => {
+        this.savingTrenvoNote.set(false);
+
+        if (error.status === 403) {
+          this.errorMessage.set(
+            'You are not allowed to update Trenvo Note.',
+          );
+          return;
+        }
+
+        if (
+          typeof error.error === 'string' &&
+          error.error.trim()
+        ) {
+          this.errorMessage.set(error.error);
+          return;
+        }
+
+        this.errorMessage.set(
+          'Could not update Trenvo Note.',
+        );
+      },
+    });
+}
 }

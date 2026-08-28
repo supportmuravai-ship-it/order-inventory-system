@@ -30,6 +30,9 @@ export interface OrderListItem {
   orderSource: number;
   invoiceStatus: number;
 
+  shoaibNote: string | null;
+  trenvoNote: string | null;
+
   needsAttention: boolean;
   hoursInCurrentStatus: number;
 
@@ -75,6 +78,14 @@ export interface OrderDetails {
 
   orderSource: number;
   invoiceStatus: number;
+
+  shoaibNote: string | null;
+  shoaibNoteUpdatedAtUtc: string | null;
+  shoaibNoteUpdatedBy: string | null;
+
+  trenvoNote: string | null;
+  trenvoNoteUpdatedAtUtc: string | null;
+  trenvoNoteUpdatedBy: string | null;
 
   warehouseName: string | null;
   lastStatusChangedAtUtc: string;

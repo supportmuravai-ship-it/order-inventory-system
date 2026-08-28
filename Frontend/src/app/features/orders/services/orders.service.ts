@@ -53,10 +53,10 @@ export class OrdersService {
     if (query.invoiceStatus !== undefined) {
       params = params.set('invoiceStatus', query.invoiceStatus);
     }
-    
+
     if (query.needsAttention !== undefined) {
-  params = params.set('needsAttention', query.needsAttention);
-}
+      params = params.set('needsAttention', query.needsAttention);
+    }
 
     if (query.sort) {
       params = params.set('sort', query.sort);
@@ -149,6 +149,29 @@ export class OrdersService {
     );
   }
 
+  updateShoaibNote(storeId: number, orderId: number, text: string | null): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/shoaib-note`,
+      {
+        text,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  updateTrenvoNote(storeId: number, orderId: number, text: string | null): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/trenvo-note`,
+      {
+        text,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
   getSummary(storeId: number, dateFrom?: string, dateTo?: string): Observable<OrderSummary> {
     let params = new HttpParams();
 

@@ -252,6 +252,18 @@ public class OrdersController : ControllerBase
                     OrderSource = x.OrderSource,
                     InvoiceStatus = x.InvoiceStatus,
 
+                    ShoaibNote = x.Notes
+                        .Where(note =>
+                            note.NoteType == NoteType.Shoaib)
+                        .Select(note => note.Text)
+                        .FirstOrDefault(),
+
+                    TrenvoNote = x.Notes
+                        .Where(note =>
+                            note.NoteType == NoteType.Trenvo)
+                        .Select(note => note.Text)
+                        .FirstOrDefault(),
+
                     Items = x.OrderItems
                         .OrderBy(item => item.Id)
                         .Select(item => new OrderItemDto
@@ -463,6 +475,60 @@ public class OrdersController : ControllerBase
 
                 InvoiceStatus = x.InvoiceStatus,
 
+                ShoaibNote = x.Notes
+                    .Where(note =>
+                        note.NoteType == NoteType.Shoaib)
+                    .Select(note => note.Text)
+                    .FirstOrDefault(),
+
+                ShoaibNoteUpdatedAtUtc = x.Notes
+                    .Where(note =>
+                        note.NoteType == NoteType.Shoaib)
+                    .Select(note => (DateTime?)note.UpdatedAtUtc)
+                    .FirstOrDefault(),
+
+                ShoaibNoteUpdatedBy = x.Notes
+                    .Where(note =>
+                        note.NoteType == NoteType.Shoaib)
+                    .Select(note =>
+                        _dbContext.Users
+                            .Where(user =>
+                                user.Id == note.UpdatedByUserId)
+                            .Select(user =>
+                                user.Email ??
+                                user.UserName ??
+                                user.Id)
+                            .FirstOrDefault() ??
+                        note.UpdatedByUserId)
+                    .FirstOrDefault(),
+
+                 TrenvoNote = x.Notes
+                    .Where(note =>
+                        note.NoteType == NoteType.Trenvo)
+                    .Select(note => note.Text)
+                    .FirstOrDefault(),
+
+                 TrenvoNoteUpdatedAtUtc = x.Notes
+                    .Where(note =>
+                        note.NoteType == NoteType.Trenvo)
+                    .Select(note => (DateTime?)note.UpdatedAtUtc)
+                    .FirstOrDefault(),
+
+                 TrenvoNoteUpdatedBy = x.Notes
+                    .Where(note =>
+                        note.NoteType == NoteType.Trenvo)
+                    .Select(note =>
+                        _dbContext.Users
+                            .Where(user =>
+                                user.Id == note.UpdatedByUserId)
+                            .Select(user =>
+                                user.Email ??
+                                user.UserName ??
+                                user.Id)
+                            .FirstOrDefault() ??
+                        note.UpdatedByUserId)
+                    .FirstOrDefault(),
+
                 WarehouseName = x.WarehouseLocation != null
                     ? x.WarehouseLocation.Name
                     : null,
@@ -540,6 +606,22 @@ public class OrdersController : ControllerBase
             history.ChangedAtUtc = DateTime.SpecifyKind(
                 history.ChangedAtUtc,
                 DateTimeKind.Utc);
+        }
+
+        if (order.ShoaibNoteUpdatedAtUtc.HasValue)
+        {
+            order.ShoaibNoteUpdatedAtUtc =
+                DateTime.SpecifyKind(
+                    order.ShoaibNoteUpdatedAtUtc.Value,
+                    DateTimeKind.Utc);
+        }
+
+        if (order.TrenvoNoteUpdatedAtUtc.HasValue)
+        {
+            order.TrenvoNoteUpdatedAtUtc =
+                DateTime.SpecifyKind(
+                    order.TrenvoNoteUpdatedAtUtc.Value,
+                    DateTimeKind.Utc);
         }
 
         var now = DateTime.UtcNow;
@@ -897,6 +979,210 @@ public class OrdersController : ControllerBase
 
         order.FinalDecision = finalDecision;
         order.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+
+    [HttpPut("{orderId:int}/shoaib-note")]
+    [Authorize(Roles = "Admin,CustomerSupport")]
+    public async Task<IActionResult> UpdateShoaibNote(
+    int storeId,
+    int orderId,
+    UpdateOrderNoteRequest request)
+    {
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                storeId);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        var noteText =
+            string.IsNullOrWhiteSpace(request.Text)
+                ? null
+                : request.Text.Trim();
+
+        if (noteText is not null &&
+            noteText.Length > 2000)
+        {
+            return BadRequest(
+                "Shoaib's Note cannot exceed 2000 characters.");
+        }
+
+        var orderExists = await _dbContext.Orders
+            .AnyAsync(x =>
+                x.StoreId == storeId &&
+                x.Id == orderId);
+
+        if (!orderExists)
+        {
+            return NotFound();
+        }
+
+        var existingNote = await _dbContext.OrderNotes
+            .SingleOrDefaultAsync(x =>
+                x.OrderId == orderId &&
+                x.NoteType == NoteType.Shoaib);
+
+        /*
+          Blank value means clear the current note.
+         */
+        if (noteText is null)
+        {
+            if (existingNote is null)
+            {
+                return NoContent();
+            }
+
+            _dbContext.OrderNotes.Remove(existingNote);
+
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        var now = DateTime.UtcNow;
+
+        if (existingNote is null)
+        {
+            var note = new OrderNote
+            {
+                OrderId = orderId,
+                NoteType = NoteType.Shoaib,
+                Text = noteText,
+                CreatedByUserId = userId,
+                UpdatedByUserId = userId,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            };
+
+            _dbContext.OrderNotes.Add(note);
+        }
+        else
+        {
+            if (existingNote.Text == noteText)
+            {
+                return NoContent();
+            }
+
+            existingNote.Text = noteText;
+            existingNote.UpdatedByUserId = userId;
+            existingNote.UpdatedAtUtc = now;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPut("{orderId:int}/trenvo-note")]
+    [Authorize(Roles = "Admin,WarehouseStaff")]
+    public async Task<IActionResult> UpdateTrenvoNote(
+    int storeId,
+    int orderId,
+    UpdateOrderNoteRequest request)
+    {
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                storeId);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        var noteText =
+            string.IsNullOrWhiteSpace(request.Text)
+                ? null
+                : request.Text.Trim();
+
+        if (noteText is not null &&
+            noteText.Length > 2000)
+        {
+            return BadRequest(
+                "Trenvo Note cannot exceed 2000 characters.");
+        }
+
+        var orderExists = await _dbContext.Orders
+            .AnyAsync(x =>
+                x.StoreId == storeId &&
+                x.Id == orderId);
+
+        if (!orderExists)
+        {
+            return NotFound();
+        }
+
+        var existingNote = await _dbContext.OrderNotes
+            .SingleOrDefaultAsync(x =>
+                x.OrderId == orderId &&
+                x.NoteType == NoteType.Trenvo);
+
+        if (noteText is null)
+        {
+            if (existingNote is null)
+            {
+                return NoContent();
+            }
+
+            _dbContext.OrderNotes.Remove(existingNote);
+
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        var now = DateTime.UtcNow;
+
+        if (existingNote is null)
+        {
+            var note = new OrderNote
+            {
+                OrderId = orderId,
+                NoteType = NoteType.Trenvo,
+                Text = noteText,
+                CreatedByUserId = userId,
+                UpdatedByUserId = userId,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            };
+
+            _dbContext.OrderNotes.Add(note);
+        }
+        else
+        {
+            if (existingNote.Text == noteText)
+            {
+                return NoContent();
+            }
+
+            existingNote.Text = noteText;
+            existingNote.UpdatedByUserId = userId;
+            existingNote.UpdatedAtUtc = now;
+        }
 
         await _dbContext.SaveChangesAsync();
 
