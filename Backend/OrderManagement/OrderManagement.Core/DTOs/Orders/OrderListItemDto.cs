@@ -2,6 +2,7 @@
 
 namespace OrderManagement.Core.DTOs.Orders;
 
+// one order row/model for the main orders list, containing customer/order-level data plus a list of OrderItemDto.
 public class OrderListItemDto
 {
     public int Id { get; set; }

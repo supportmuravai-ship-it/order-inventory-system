@@ -13,52 +13,59 @@ import { storeGuard } from './core/guards/store.guard';
 import { AdminComponent } from './features/admin/admin/admin';
 import { adminGuard } from './core/guards/role.guard';
 import { OrderDetailsComponent } from './features/orders/order-details/order-details';
+import { ImportOrdersComponent } from './features/orders/import-orders/import-orders';
+import { CreateOrderComponent } from './features/orders/create-order/create-order';
 
 export const routes: Routes = [
-
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
   },
 
   {
     path: 'stores',
     component: StoreSelectionComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
 
   {
     path: 'workspace',
     component: WorkspaceComponent,
-    canActivate: [
-      authGuard,
-      storeGuard
-    ]
+    canActivate: [authGuard, storeGuard],
   },
 
   {
-  path: 'admin',
-  component: AdminComponent,
-  canActivate: [
-    authGuard,
-    adminGuard
-  ]
-},
+    path: 'admin',
+    component: AdminComponent,
+    canActivate: [authGuard, adminGuard],
+  },
 
   {
     path: 'unauthorized',
-    component: UnauthorizedComponent
+    component: UnauthorizedComponent,
   },
 
   {
     path: '',
     redirectTo: 'login',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
 
   {
-  path: 'workspace/orders/:orderId',
-  component: OrderDetailsComponent,
+    path: 'workspace/orders/:orderId',
+    component: OrderDetailsComponent,
+    canActivate: [authGuard, storeGuard],
+  },
+
+  {
+    path: 'workspace/import-orders',
+    component: ImportOrdersComponent,
+    canActivate: [authGuard, storeGuard],
+  },
+
+  {
+  path: 'workspace/create-order',
+  component: CreateOrderComponent,
   canActivate: [
     authGuard,
     storeGuard
@@ -67,7 +74,6 @@ export const routes: Routes = [
 
   {
     path: '**',
-    redirectTo: 'login'
-  }
-
+    redirectTo: 'login',
+  },
 ];

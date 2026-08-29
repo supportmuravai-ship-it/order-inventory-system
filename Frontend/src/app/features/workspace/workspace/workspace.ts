@@ -67,12 +67,14 @@ export class WorkspaceComponent implements OnInit {
   readonly needsAttentionOnly = signal(false);
 
   readonly editingShoaibNoteOrderId = signal<number | null>(null);
-readonly savingShoaibNoteOrderId = signal<number | null>(null);
-readonly shoaibNoteEditValue = signal('');
+  readonly savingShoaibNoteOrderId = signal<number | null>(null);
+  readonly shoaibNoteEditValue = signal('');
 
-readonly editingTrenvoNoteOrderId = signal<number | null>(null);
-readonly savingTrenvoNoteOrderId = signal<number | null>(null);
-readonly trenvoNoteEditValue = signal('');
+  readonly editingTrenvoNoteOrderId = signal<number | null>(null);
+  readonly savingTrenvoNoteOrderId = signal<number | null>(null);
+  readonly trenvoNoteEditValue = signal('');
+
+  readonly mobileMenuOpen = signal(false);
 
   readonly summary = signal<OrderSummary>({
     totalOrders: 0,
@@ -85,6 +87,7 @@ readonly trenvoNoteEditValue = signal('');
     cancelled: 0,
     repeatedOrder: 0,
     needsAttention: 0,
+    new: 0,
   });
 
   readonly summaryLoading = signal(true);
@@ -249,18 +252,18 @@ readonly trenvoNoteEditValue = signal('');
   }
 
   showNeedsAttention(): void {
-  this.needsAttentionOnly.set(true);
-  this.page.set(1);
+    this.needsAttentionOnly.set(true);
+    this.page.set(1);
 
-  this.loadOrders();
-}
+    this.loadOrders();
+  }
 
-showAllOrders(): void {
-  this.needsAttentionOnly.set(false);
-  this.page.set(1);
+  showAllOrders(): void {
+    this.needsAttentionOnly.set(false);
+    this.page.set(1);
 
-  this.loadOrders();
-}
+    this.loadOrders();
+  }
 
   changeSort(event: Event): void {
     const select = event.target as HTMLSelectElement;
@@ -616,6 +619,7 @@ showAllOrders(): void {
       5: 'Return In Process',
       6: 'Cancelled',
       7: 'Repeated Order',
+      8: 'New',
     };
 
     return statuses[status] ?? 'Unknown';
@@ -631,6 +635,7 @@ showAllOrders(): void {
       5: 'bg-yellow-100 text-yellow-700',
       6: 'bg-gray-200 text-gray-700',
       7: 'bg-pink-100 text-pink-700',
+      8: 'bg-cyan-100 text-cyan-700',
     };
 
     return classes[status] ?? 'bg-gray-100 text-gray-700';
@@ -651,51 +656,44 @@ showAllOrders(): void {
     return status === 0 ? 'Paid' : 'Unpaid';
   }
 
-
   startShoaibNoteEdit(order: OrderListItem): void {
-  this.editingShoaibNoteOrderId.set(order.id);
-  this.shoaibNoteEditValue.set(order.shoaibNote ?? '');
-  this.statusUpdateMessage.set('');
-}
-
-cancelShoaibNoteEdit(): void {
-  this.editingShoaibNoteOrderId.set(null);
-  this.shoaibNoteEditValue.set('');
-}
-
-saveShoaibNote(order: OrderListItem): void {
-  const store = this.authService.selectedStore();
-
-  if (!store) {
-    return;
+    this.editingShoaibNoteOrderId.set(order.id);
+    this.shoaibNoteEditValue.set(order.shoaibNote ?? '');
+    this.statusUpdateMessage.set('');
   }
 
-  const value = this.shoaibNoteEditValue().trim();
-  const text = value === '' ? null : value;
-
-  if (text === order.shoaibNote) {
-    this.cancelShoaibNoteEdit();
-    return;
+  cancelShoaibNoteEdit(): void {
+    this.editingShoaibNoteOrderId.set(null);
+    this.shoaibNoteEditValue.set('');
   }
 
-  this.savingShoaibNoteOrderId.set(order.id);
-  this.errorMessage.set('');
-  this.statusUpdateMessage.set('');
+  saveShoaibNote(order: OrderListItem): void {
+    const store = this.authService.selectedStore();
 
-  this.ordersService
-    .updateShoaibNote(
-      store.id,
-      order.id,
-      text,
-    )
-    .subscribe({
+    if (!store) {
+      return;
+    }
+
+    const value = this.shoaibNoteEditValue().trim();
+    const text = value === '' ? null : value;
+
+    if (text === order.shoaibNote) {
+      this.cancelShoaibNoteEdit();
+      return;
+    }
+
+    this.savingShoaibNoteOrderId.set(order.id);
+    this.errorMessage.set('');
+    this.statusUpdateMessage.set('');
+
+    this.ordersService.updateShoaibNote(store.id, order.id, text).subscribe({
       next: () => {
         this.savingShoaibNoteOrderId.set(null);
         this.editingShoaibNoteOrderId.set(null);
         this.shoaibNoteEditValue.set('');
 
         this.statusUpdateMessage.set(
-          `${order.displayOrderId} Shoaib's Note updated successfully.`,
+          `${order.displayOrderId} Customer Support note updated successfully.`,
         );
 
         this.loadOrders();
@@ -705,71 +703,58 @@ saveShoaibNote(order: OrderListItem): void {
         this.savingShoaibNoteOrderId.set(null);
 
         if (error.status === 403) {
-          this.errorMessage.set(
-            "You are not allowed to update Shoaib's Note.",
-          );
+          this.errorMessage.set('You are not allowed to update Customer Support note.');
           return;
         }
 
-        if (
-          typeof error.error === 'string' &&
-          error.error.trim()
-        ) {
+        if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set(
-          "Could not update Shoaib's Note.",
-        );
+        this.errorMessage.set('Could not update the Customer Support note.');
       },
     });
-}
-
-startTrenvoNoteEdit(order: OrderListItem): void {
-  this.editingTrenvoNoteOrderId.set(order.id);
-  this.trenvoNoteEditValue.set(order.trenvoNote ?? '');
-  this.statusUpdateMessage.set('');
-}
-
-cancelTrenvoNoteEdit(): void {
-  this.editingTrenvoNoteOrderId.set(null);
-  this.trenvoNoteEditValue.set('');
-}
-
-saveTrenvoNote(order: OrderListItem): void {
-  const store = this.authService.selectedStore();
-
-  if (!store) {
-    return;
   }
 
-  const value = this.trenvoNoteEditValue().trim();
-  const text = value === '' ? null : value;
-
-  if (text === order.trenvoNote) {
-    this.cancelTrenvoNoteEdit();
-    return;
+  startTrenvoNoteEdit(order: OrderListItem): void {
+    this.editingTrenvoNoteOrderId.set(order.id);
+    this.trenvoNoteEditValue.set(order.trenvoNote ?? '');
+    this.statusUpdateMessage.set('');
   }
 
-  this.savingTrenvoNoteOrderId.set(order.id);
-  this.errorMessage.set('');
-  this.statusUpdateMessage.set('');
+  cancelTrenvoNoteEdit(): void {
+    this.editingTrenvoNoteOrderId.set(null);
+    this.trenvoNoteEditValue.set('');
+  }
 
-  this.ordersService
-    .updateTrenvoNote(
-      store.id,
-      order.id,
-      text,
-    )
-    .subscribe({
+  saveTrenvoNote(order: OrderListItem): void {
+    const store = this.authService.selectedStore();
+
+    if (!store) {
+      return;
+    }
+
+    const value = this.trenvoNoteEditValue().trim();
+    const text = value === '' ? null : value;
+
+    if (text === order.trenvoNote) {
+      this.cancelTrenvoNoteEdit();
+      return;
+    }
+
+    this.savingTrenvoNoteOrderId.set(order.id);
+    this.errorMessage.set('');
+    this.statusUpdateMessage.set('');
+
+    this.ordersService.updateTrenvoNote(store.id, order.id, text).subscribe({
       next: () => {
         this.savingTrenvoNoteOrderId.set(null);
         this.editingTrenvoNoteOrderId.set(null);
         this.trenvoNoteEditValue.set('');
 
         this.statusUpdateMessage.set(
-          `${order.displayOrderId} Trenvo Note updated successfully.`,
+          `${order.displayOrderId} Warehouse staff Note updated successfully.`,
         );
 
         this.loadOrders();
@@ -779,24 +764,35 @@ saveTrenvoNote(order: OrderListItem): void {
         this.savingTrenvoNoteOrderId.set(null);
 
         if (error.status === 403) {
-          this.errorMessage.set(
-            'You are not allowed to update Trenvo Note.',
-          );
+          this.errorMessage.set('You are not allowed to update Warehouse staff Note.');
           return;
         }
 
-        if (
-          typeof error.error === 'string' &&
-          error.error.trim()
-        ) {
+        if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set(
-          'Could not update Trenvo Note.',
-        );
+        this.errorMessage.set('Could not update Warehouse staff Note.');
       },
     });
-}
+  }
+
+  openMobileMenu(): void {
+    this.mobileMenuOpen.set(true);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
+  openCreateOrder(): void {
+    this.mobileMenuOpen.set(false);
+    this.router.navigate(['/workspace/create-order']);
+  }
+
+  openImportOrders(): void {
+    this.mobileMenuOpen.set(false);
+    this.router.navigate(['/workspace/import-orders']);
+  }
 }

@@ -36,6 +36,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<OrderNote> OrderNotes => Set<OrderNote>();
 
+    // ApplicationUser is not written as a DbSet<ApplicationUser> because AppDbContext inherits from: IdentityDbContext<ApplicationUser>. It already adds the users table internally
+
     protected override void OnModelCreating(ModelBuilder builder) // OnModelCreating() is called automatically by EF Core
     {
         base.OnModelCreating(builder);

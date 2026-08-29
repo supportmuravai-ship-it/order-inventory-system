@@ -133,6 +133,8 @@
                   <option value="6">Cancelled</option>
 
                   <option value="7">Repeated Order</option>
+
+                  <option value="8">New</option>
                 </select>
 
                 <button
@@ -323,12 +325,12 @@
 
       <!-- Notes -->
       <div class="mt-5 grid gap-5 lg:grid-cols-2">
-        <!-- Shoaib's Note -->
+        <!-- Shoaib's Note (customer suppport note)-->
         <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Shoaib's Note</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Customer Support Note</h2>
 
-            <p class="mt-1 text-xs text-gray-500">Customer Support note</p>
+            <!-- <p class="mt-1 text-xs text-gray-500">Customer Support note</p> -->
           </div>
 
           <textarea
@@ -336,7 +338,7 @@
             maxlength="2000"
             [value]="shoaibNoteValue()"
             (input)="shoaibNoteValue.set($any($event.target).value)"
-            placeholder="Add Shoaib's Note..."
+            placeholder="Add Customer Support note..."
             class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
           ></textarea>
 
@@ -382,12 +384,12 @@
           }
         </section>
 
-        <!-- Trenvo Note -->
+        <!-- Trenvo Note (warehouse staff note) -->
         <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Trenvo Note</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Warehouse Staff Note</h2>
 
-            <p class="mt-1 text-xs text-gray-500">Warehouse note</p>
+            <!-- <p class="mt-1 text-xs text-gray-500">Warehouse note</p> -->
           </div>
 
           <textarea
@@ -395,7 +397,7 @@
             maxlength="2000"
             [value]="trenvoNoteValue()"
             (input)="trenvoNoteValue.set($any($event.target).value)"
-            placeholder="Add Trenvo Note..."
+            placeholder="Add Warehouse Staff note..."
             class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
           ></textarea>
 

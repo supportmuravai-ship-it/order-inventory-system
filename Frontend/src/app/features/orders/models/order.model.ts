@@ -137,4 +137,45 @@ export interface OrderSummary {
   cancelled: number;
   repeatedOrder: number;
   needsAttention: number;
+  new: number;
+}
+
+export interface CsvImportError {
+  rowNumber: number | null;
+  displayOrderId: string | null;
+  message: string;
+}
+
+export interface CsvImportResult {
+  totalRows: number;
+  importedOrders: number;
+  duplicates: number;
+  skipped: number;
+  failed: number;
+  errors: CsvImportError[];
+}
+
+export interface CreateManualOrderItem {
+  productName: string;
+  variantName: string | null;
+  sku: string | null;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface CreateManualOrderRequest {
+  displayOrderId: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  city: string;
+  orderDateUtc: string;
+  orderSource: number;
+  totalAmount: number;
+  items: CreateManualOrderItem[];
+}
+
+export interface CreateManualOrderResult {
+  id: number;
+  displayOrderId: string;
 }

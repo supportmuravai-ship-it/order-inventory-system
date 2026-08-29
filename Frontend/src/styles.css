@@ -1,2 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
+
+/* Remove number input spinner arrows */
+input.no-number-arrows::-webkit-outer-spin-button,
+input.no-number-arrows::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input.no-number-arrows {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

@@ -9,6 +9,9 @@ import {
   PagedResult,
   OrderQuery,
   OrderSummary,
+  CsvImportResult,
+  CreateManualOrderRequest,
+  CreateManualOrderResult,
 } from '../models/order.model';
 
 @Injectable({
@@ -187,5 +190,32 @@ export class OrdersService {
       params,
       withCredentials: true,
     });
+  }
+
+  importCsv(storeId: number, file: File): Observable<CsvImportResult> {
+    const formData = new FormData();
+
+    formData.append('file', file);
+
+    return this.http.post<CsvImportResult>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/import-csv`,
+      formData,
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  createManualOrder(
+    storeId: number,
+    request: CreateManualOrderRequest,
+  ): Observable<CreateManualOrderResult> {
+    return this.http.post<CreateManualOrderResult>(
+      `${this.apiUrl}/api/stores/${storeId}/orders`,
+      request,
+      {
+        withCredentials: true,
+      },
+    );
   }
 }

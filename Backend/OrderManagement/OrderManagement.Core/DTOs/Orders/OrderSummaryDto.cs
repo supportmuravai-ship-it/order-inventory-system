@@ -21,4 +21,6 @@ public class OrderSummaryDto
     public int RepeatedOrder { get; set; }
 
     public int NeedsAttention { get; set; }
+
+    public int New { get; set; }
 }

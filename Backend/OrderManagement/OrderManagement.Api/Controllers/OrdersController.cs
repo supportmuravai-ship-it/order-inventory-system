@@ -19,12 +19,16 @@ public class OrdersController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly IStoreAccessService _storeAccessService;
 
+    private readonly ICsvOrderImportService _csvOrderImportService;
+
     public OrdersController(
-        AppDbContext dbContext,
-        IStoreAccessService storeAccessService)
+    AppDbContext dbContext,
+    IStoreAccessService storeAccessService,
+    ICsvOrderImportService csvOrderImportService)
     {
         _dbContext = dbContext;
         _storeAccessService = storeAccessService;
+        _csvOrderImportService = csvOrderImportService;
     }
 
     [HttpGet]
@@ -199,6 +203,7 @@ public class OrdersController : ControllerBase
         {
             "oldest" => query
                 .OrderBy(x => x.OrderDateUtc)
+                .ThenBy(x => x.CreatedAtUtc)
                 .ThenBy(x => x.Id),
 
             "orderId" => query
@@ -219,6 +224,7 @@ public class OrdersController : ControllerBase
 
             _ => query
                 .OrderByDescending(x => x.OrderDateUtc)
+                .ThenByDescending(x => x.CreatedAtUtc)
                 .ThenByDescending(x => x.Id)
         };
 
@@ -409,7 +415,10 @@ public class OrdersController : ControllerBase
                     x.OrderStatus != OrderStatus.Return &&
                     x.OrderStatus != OrderStatus.Cancelled &&
                     x.OrderStatus != OrderStatus.RepeatedOrder &&
-                    x.LastStatusChangedAtUtc <= attentionThreshold)
+                    x.LastStatusChangedAtUtc <= attentionThreshold),
+
+                New = group.Count(x =>
+                    x.OrderStatus == OrderStatus.New),
             })
             .SingleOrDefaultAsync();
 
@@ -1187,5 +1196,313 @@ public class OrdersController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [HttpPost("import-csv")]
+    [Authorize(Roles = "Admin,CustomerSupport")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task<ActionResult<CsvImportResultDto>> ImportCsv(
+    int storeId,
+    IFormFile file,
+    CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                storeId);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(
+                "Please select a CSV file.");
+        }
+
+        if (file.Length > 5 * 1024 * 1024)
+        {
+            return BadRequest(
+                "CSV file cannot exceed 5 MB.");
+        }
+
+        var extension =
+            Path.GetExtension(file.FileName);
+
+        if (!string.Equals(
+                extension,
+                ".csv",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(
+                "Only CSV files are allowed.");
+        }
+
+        await using var stream =
+            file.OpenReadStream();
+
+        var result =
+            await _csvOrderImportService.ImportAsync(
+                storeId,
+                stream,
+                cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin,CustomerSupport")]
+    public async Task<IActionResult> CreateManualOrder(
+    int storeId,
+    CreateManualOrderRequest request,
+    CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                storeId);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        var displayOrderId =
+            request.DisplayOrderId?.Trim();
+
+        if (string.IsNullOrWhiteSpace(displayOrderId))
+        {
+            return BadRequest(
+                "Display Order ID is required.");
+        }
+
+        if (displayOrderId.Length > 100)
+        {
+            return BadRequest(
+                "Display Order ID cannot exceed 100 characters.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return BadRequest(
+                "Customer Full Name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Phone))
+        {
+            return BadRequest(
+                "Phone is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.AddressLine1))
+        {
+            return BadRequest(
+                "Address 1 is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.City))
+        {
+            return BadRequest(
+                "City is required.");
+        }
+
+        if (request.OrderDateUtc == default)
+        {
+            return BadRequest(
+                "Order Date is required.");
+        }
+
+        /*
+         * Current OrderSource enum contains:
+         * Shopify, CSVImport, WhatsApp, Other.
+         *
+         * Manual creation should only use WhatsApp or Other.
+         */
+        if (request.OrderSource != OrderSource.WhatsApp &&
+            request.OrderSource != OrderSource.Other)
+        {
+            return BadRequest(
+                "Manual orders can only use WhatsApp or Other as Order Source.");
+        }
+
+        if (request.TotalAmount < 0)
+        {
+            return BadRequest(
+                "Total Amount cannot be negative.");
+        }
+
+        if (request.Items is null ||
+            request.Items.Count == 0)
+        {
+            return BadRequest(
+                "At least one order item is required.");
+        }
+
+        foreach (var item in request.Items)
+        {
+            if (string.IsNullOrWhiteSpace(item.ProductName))
+            {
+                return BadRequest(
+                    "Product Name is required for every item.");
+            }
+
+            if (item.Quantity <= 0)
+            {
+                return BadRequest(
+                    "Quantity must be greater than 0.");
+            }
+
+            if (item.UnitPrice < 0)
+            {
+                return BadRequest(
+                    "Unit Price cannot be negative.");
+            }
+        }
+
+        var duplicateExists =
+            await _dbContext.Orders.AnyAsync(
+                x =>
+                    x.StoreId == storeId &&
+                    x.DisplayOrderId == displayOrderId,
+                cancellationToken);
+
+        if (duplicateExists)
+        {
+            return Conflict(
+                $"Order ID {displayOrderId} already exists for this store.");
+        }
+
+        var now = DateTime.UtcNow;
+
+        var customer = new Customer
+        {
+            StoreId = storeId,
+
+            ExternalCustomerId = null,
+
+            FullName = request.FullName.Trim(),
+
+            Phone = request.Phone.Trim(),
+
+            AddressLine1 =
+                request.AddressLine1.Trim(),
+
+            City = request.City.Trim(),
+
+            Country = "UAE",
+
+            CreatedAtUtc = now,
+
+            UpdatedAtUtc = now
+        };
+
+        var order = new Order
+        {
+            StoreId = storeId,
+
+            ExternalOrderId = null,
+
+            DisplayOrderId = displayOrderId,
+
+            OrderSource = request.OrderSource,
+
+            Customer = customer,
+
+            OrderStatus = OrderStatus.New,
+
+            TrackingNumber = null,
+
+            LocationLink = null,
+
+            FinalDecision = null,
+
+            InvoiceStatus = InvoiceStatus.Unpaid,
+
+            TotalAmount = request.TotalAmount,
+
+            Currency = "AED",
+
+            OrderDateUtc =
+                request.OrderDateUtc.Kind == DateTimeKind.Utc
+                    ? request.OrderDateUtc
+                    : request.OrderDateUtc.ToUniversalTime(),
+
+            WarehouseLocationId = null,
+
+            LastStatusChangedAtUtc = now,
+
+            CreatedAtUtc = now,
+
+            UpdatedAtUtc = now
+        };
+
+        foreach (var requestItem in request.Items)
+        {
+            order.OrderItems.Add(new OrderItem
+            {
+                ProductName =
+                    requestItem.ProductName.Trim(),
+
+                VariantName =
+                    string.IsNullOrWhiteSpace(
+                        requestItem.VariantName)
+                        ? null
+                        : requestItem.VariantName.Trim(),
+
+                SKU =
+                    string.IsNullOrWhiteSpace(
+                        requestItem.SKU)
+                        ? null
+                        : requestItem.SKU.Trim(),
+
+                Quantity = requestItem.Quantity,
+
+                UnitPrice = requestItem.UnitPrice,
+
+                LineTotal =
+                    requestItem.Quantity *
+                    requestItem.UnitPrice,
+
+                CreatedAtUtc = now,
+
+                UpdatedAtUtc = now
+            });
+        }
+
+        _dbContext.Orders.Add(order);
+
+        await _dbContext.SaveChangesAsync(
+            cancellationToken);
+
+        return CreatedAtAction(
+            nameof(GetOrder),
+            new
+            {
+                storeId,
+                orderId = order.Id
+            },
+            new
+            {
+                order.Id,
+                order.DisplayOrderId
+            });
     }
 }

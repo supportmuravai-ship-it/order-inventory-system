@@ -160,6 +160,7 @@ export class OrderDetailsComponent implements OnInit {
       5: 'Return In Process',
       6: 'Cancelled',
       7: 'Repeated Order',
+      8: 'New',
     };
 
     return statuses[status] ?? 'Unknown';
@@ -398,8 +399,8 @@ export class OrderDetailsComponent implements OnInit {
 
         this.successMessage.set(
           text === null
-            ? "Shoaib's Note cleared successfully."
-            : "Shoaib's Note updated successfully.",
+            ? "Customer support Note cleared successfully."
+            : "Customer support Note updated successfully.",
         );
 
         this.loadOrder();
@@ -410,7 +411,7 @@ export class OrderDetailsComponent implements OnInit {
 
         if (error.status === 403) {
           this.errorMessage.set(
-            "You are not allowed to update Shoaib's Note.",
+            "You are not allowed to update Customer Support Note.",
           );
           return;
         }
@@ -424,7 +425,7 @@ export class OrderDetailsComponent implements OnInit {
         }
 
         this.errorMessage.set(
-          "Could not update Shoaib's Note.",
+          "Could not update Customer support Note.",
         );
       },
     });
@@ -463,8 +464,8 @@ saveTrenvoNote(): void {
 
         this.successMessage.set(
           text === null
-            ? 'Trenvo Note cleared successfully.'
-            : 'Trenvo Note updated successfully.',
+            ? 'Warehouse staff Note cleared successfully.'
+            : 'Warehouse staff Note updated successfully.',
         );
 
         this.loadOrder();
@@ -475,7 +476,7 @@ saveTrenvoNote(): void {
 
         if (error.status === 403) {
           this.errorMessage.set(
-            'You are not allowed to update Trenvo Note.',
+            'You are not allowed to update Warehouse staff Note.',
           );
           return;
         }
@@ -489,7 +490,7 @@ saveTrenvoNote(): void {
         }
 
         this.errorMessage.set(
-          'Could not update Trenvo Note.',
+          'Could not update Warehouse staff Note.',
         );
       },
     });

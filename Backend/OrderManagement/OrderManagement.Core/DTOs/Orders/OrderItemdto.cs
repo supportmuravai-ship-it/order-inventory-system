@@ -1,5 +1,6 @@
 ﻿namespace OrderManagement.Core.DTOs.Orders;
 
+// one product/line item inside an order.
 public class OrderItemDto
 {
     public int Id { get; set; }

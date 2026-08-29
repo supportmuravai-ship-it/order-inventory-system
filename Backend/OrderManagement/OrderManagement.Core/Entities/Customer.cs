@@ -16,7 +16,7 @@ public class Customer
 
     public string City { get; set; } = string.Empty;
 
-    public string Country { get; set; } = "UAE";
+    public string Country { get; set; } = "UAE"; // Country Hardcoded
 
     public DateTime CreatedAtUtc { get; set; }
 

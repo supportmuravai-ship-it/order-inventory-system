@@ -1,0 +1,261 @@
+<div class="min-h-screen bg-gray-100">
+  <header class="border-b bg-white">
+    <div class="flex items-center justify-between px-4 py-4 lg:px-6">
+      <div>
+        <div class="text-xl font-bold tracking-wide">
+          SQUAD<span class="text-blue-600">21</span>
+        </div>
+
+        <div class="mt-1 text-sm text-gray-500">Add Manual Order</div>
+      </div>
+
+      <button
+        type="button"
+        (click)="goBack()"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        Back to Orders
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-5xl p-4 lg:p-6">
+    <div class="rounded-xl border bg-white p-6 shadow-sm">
+      <h1 class="text-xl font-semibold text-gray-900">Add Order</h1>
+
+      <p class="mt-1 text-sm text-gray-500">Create a WhatsApp or other manually received order.</p>
+
+      @if (errorMessage()) {
+        <div class="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <div class="mt-6 grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Order ID * </label>
+
+          <input
+            type="text"
+            [(ngModel)]="displayOrderId"
+            placeholder="e.g. WA101"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Full Name * </label>
+
+          <input
+            type="text"
+            [(ngModel)]="fullName"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Phone * </label>
+
+          <input
+            type="text"
+            [(ngModel)]="phone"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Address 1 * </label>
+
+          <input
+            type="text"
+            [(ngModel)]="addressLine1"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> City * </label>
+
+          <input
+            type="text"
+            [(ngModel)]="city"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Order Source * </label>
+
+          <select
+            [(ngModel)]="orderSource"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option [ngValue]="2">WhatsApp</option>
+
+            <option [ngValue]="3">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-8 border-t pt-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">Order Items</h2>
+
+            <p class="text-sm text-gray-500">At least one product is required.</p>
+          </div>
+
+          <button
+            type="button"
+            (click)="addItem()"
+            class="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+          >
+            + Add Item
+          </button>
+        </div>
+
+        <div class="mt-4 space-y-4">
+          @for (item of items; track $index; let i = $index) {
+            <div class="rounded-lg border border-gray-200 p-4">
+              <div class="mb-4 flex items-center justify-between">
+                <div class="font-medium text-gray-800">Item {{ i + 1 }}</div>
+
+                @if (items.length > 1) {
+                  <button
+                    type="button"
+                    (click)="removeItem(i)"
+                    class="text-sm text-red-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                }
+              </div>
+
+              <div class="grid gap-4 md:grid-cols-5">
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-sm text-gray-600"> Product Name * </label>
+
+                  <input
+                    type="text"
+                    [(ngModel)]="item.productName"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm text-gray-600"> Variant </label>
+
+                  <input
+                    type="text"
+                    [(ngModel)]="item.variantName"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm text-gray-600"> SKU </label>
+
+                  <input
+                    type="text"
+                    [(ngModel)]="item.sku"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm text-gray-600"> Quantity * </label>
+
+                  <input
+                    type="number"
+                    min="1"
+                    [(ngModel)]="item.quantity"
+                    (ngModelChange)="updateOrderTotal()"
+                    (wheel)="onNumberWheel($event)"
+                    class="no-number-arrows w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm text-gray-600"> Unit Price * </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [(ngModel)]="item.unitPrice"
+                    (ngModelChange)="updateOrderTotal()"
+                    (wheel)="onNumberWheel($event)"
+                    class="no-number-arrows w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm text-gray-600"> Line Total </label>
+
+                  <div class="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                    AED
+                    {{ (item.quantity || 0) * (item.unitPrice || 0) | number: '1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="mt-6 border-t pt-6">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <div class="text-sm text-gray-500">Item Total</div>
+
+            <div class="mt-1 text-lg font-semibold text-gray-900">
+              AED {{ calculateItemsTotal() | number: '1.2-2' }}
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-sm font-medium text-gray-700"> Order Total * </label>
+
+            <div class="flex gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                [(ngModel)]="totalAmount"
+                (wheel)="onNumberWheel($event)"
+                class="no-number-arrows w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            <p class="mt-1 text-xs text-gray-500">
+              This may differ from item total when a discount or special deal is used.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 flex justify-end gap-3">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          (click)="saveOrder()"
+          [disabled]="saving()"
+          class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          @if (saving()) {
+            Saving...
+          } @else {
+            Create Order
+          }
+        </button>
+      </div>
+    </div>
+  </main>
+</div>

@@ -13,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IStoreAccessService, StoreAccessService>();
+builder.Services.AddScoped<ICsvOrderImportService,CsvOrderImportService>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
