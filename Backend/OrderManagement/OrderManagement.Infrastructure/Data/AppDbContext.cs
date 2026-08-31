@@ -65,6 +65,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .HasMaxLength(50)
                 .IsRequired();
 
+            entity.Property(x => x.ShopDomain)
+                .HasMaxLength(255);
+
             entity.HasIndex(x => x.Code)
                 .IsUnique();
         });

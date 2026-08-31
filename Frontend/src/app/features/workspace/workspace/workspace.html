@@ -201,10 +201,10 @@
                 </p>
               </div>
 
-              <div class="rounded-xl border border-red-200 bg-red-50 p-4">
-                <p class="text-xs font-medium uppercase text-red-700">Return</p>
+              <div class="rounded-xl border border-teal-200 bg-teal-50 p-4">
+                <p class="text-xs font-medium uppercase text-teal-700">Return</p>
 
-                <p class="mt-2 text-2xl font-bold text-red-900">
+                <p class="mt-2 text-2xl font-bold text-teal-900">
                   {{ summary().return }}
                 </p>
               </div>
@@ -547,7 +547,9 @@
                   @for (item of order.items; track item.id; let first = $first) {
                     <tr
                       [ngClass]="
-                        order.needsAttention ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'
+                        order.needsAttention
+                          ? 'bg-red-100 hover:bg-red-200'
+                          : getStatusRowClasses(order.orderStatus)
                       "
                     >
                       <td class="whitespace-nowrap px-4 py-3 text-gray-600">

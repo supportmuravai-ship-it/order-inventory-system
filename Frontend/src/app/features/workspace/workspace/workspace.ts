@@ -631,7 +631,7 @@ export class WorkspaceComponent implements OnInit {
       1: 'bg-blue-100 text-blue-700',
       2: 'bg-green-100 text-green-700',
       3: 'bg-orange-100 text-orange-700',
-      4: 'bg-red-100 text-red-700',
+      4: 'bg-teal-100 text-teal-700',
       5: 'bg-yellow-100 text-yellow-700',
       6: 'bg-gray-200 text-gray-700',
       7: 'bg-pink-100 text-pink-700',
@@ -795,4 +795,20 @@ export class WorkspaceComponent implements OnInit {
     this.mobileMenuOpen.set(false);
     this.router.navigate(['/workspace/import-orders']);
   }
+
+  getStatusRowClasses(status: number): string {
+  const classes: Record<number, string> = {
+    0: 'bg-purple-50 hover:bg-purple-100', // Confirmed
+    1: 'bg-blue-50 hover:bg-blue-100',     // Shipped
+    2: 'bg-green-50 hover:bg-green-100',   // Delivered
+    3: 'bg-orange-50 hover:bg-orange-100', // No Response
+    4: 'bg-teal-50 hover:bg-teal-100',       // Return
+    5: 'bg-yellow-50 hover:bg-yellow-100', // Return In Process
+    6: 'bg-gray-100 hover:bg-gray-200',    // Cancelled
+    7: 'bg-pink-50 hover:bg-pink-100',     // Repeated Order
+    8: 'bg-cyan-50 hover:bg-cyan-100',     // New
+  };
+
+  return classes[status] ?? 'hover:bg-gray-50';
+}
 }

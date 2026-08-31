@@ -15,6 +15,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IStoreAccessService, StoreAccessService>();
 builder.Services.AddScoped<ICsvOrderImportService,CsvOrderImportService>();
 
+builder.Services.AddHttpClient<ShopifyAdminClient>();
+builder.Services.AddScoped<ShopifyOrderSyncService>();
+builder.Services.AddScoped<ShopifyWebhookVerifier>();
+builder.Services.AddScoped<ShopifyReconciliationService>();
+builder.Services.AddHostedService<ShopifyReconciliationBackgroundService>();
+
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {

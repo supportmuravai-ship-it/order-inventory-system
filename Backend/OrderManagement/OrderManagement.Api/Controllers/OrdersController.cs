@@ -8,6 +8,7 @@ using OrderManagement.Core.Enums;
 using OrderManagement.Core.Interfaces;
 using OrderManagement.Infrastructure.Data;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace OrderManagement.Api.Controllers;
 
@@ -311,6 +312,12 @@ public class OrdersController : ControllerBase
         var items = orderRows
             .Select(x => x.Order)
             .ToList();
+
+        // query --> Orders + filters
+
+        //sortedQuery --> query + sorting       
+
+        //orderRows --> sortedQuery + pagination + selected columns
 
         var result = new PagedResultDto<OrderListItemDto>
         {

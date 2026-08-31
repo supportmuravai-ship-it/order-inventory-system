@@ -1,4 +1,5 @@
 ﻿namespace OrderManagement.Core.Entities;
+
 public class Store
 {
     public int Id { get; set; }
@@ -6,6 +7,10 @@ public class Store
     public string Name { get; set; } = string.Empty;
 
     public string Code { get; set; } = string.Empty;
+
+    // Example: my-store.myshopify.com
+    // Non-secret Shopify store identity.
+    public string? ShopDomain { get; set; }
 
     public bool IsActive { get; set; } = true;
 
@@ -22,5 +27,3 @@ public class Store
     public ICollection<Order> Orders { get; set; }
         = new List<Order>();
 }
-
-// We are intentionally not adding Shopify credentials, domains, webhooks, etc. Those belong to later phases.
