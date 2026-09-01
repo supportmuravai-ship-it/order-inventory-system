@@ -47,23 +47,32 @@ public class ShopifyReconciliationBackgroundService : BackgroundService
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var reconciliationService = scope.ServiceProvider.GetRequiredService<ShopifyReconciliationService>();
 
-        var storeIds = await dbContext.Stores
-            .AsNoTracking()
+        var stores = await dbContext.Stores
             .Where(x => x.IsActive && x.ShopDomain != null)
-            .Select(x => x.Id)
             .ToListAsync(cancellationToken);
 
-        foreach (var storeId in storeIds)
+        foreach (var store in stores)
         {
             try
             {
-                var updatedSinceUtc = DateTime.UtcNow.AddMinutes(-30);
+                var now = DateTime.UtcNow;
 
-                var result = await reconciliationService.ReconcileStoreAsync(storeId, updatedSinceUtc, cancellationToken);
+                var updatedSinceUtc = store.LastReconciliationAtUtc.HasValue
+                    ? store.LastReconciliationAtUtc.Value.AddMinutes(-15)
+                    : now.AddHours(-24);
+
+                var result = await reconciliationService.ReconcileStoreAsync(store.Id, updatedSinceUtc, cancellationToken);
+
+                store.LastReconciliationAtUtc = now;
+                store.LastSuccessfulSyncAtUtc = now;
+                store.LastShopifyError = null;
+                store.UpdatedAtUtc = now;
+
+                await dbContext.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation(
                     "Shopify reconciliation completed for Store {StoreId}. Fetched: {Fetched}, Created: {Created}, Updated: {Updated}, Skipped: {Skipped}, Failed: {Failed}.",
-                    storeId,
+                    store.Id,
                     result.Fetched,
                     result.Created,
                     result.Updated,
@@ -72,7 +81,12 @@ public class ShopifyReconciliationBackgroundService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Shopify reconciliation failed for Store {StoreId}.", storeId);
+                store.LastShopifyError = ex.Message;
+                store.UpdatedAtUtc = DateTime.UtcNow;
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                _logger.LogError(ex, "Shopify reconciliation failed for Store {StoreId}.", store.Id);
             }
         }
     }

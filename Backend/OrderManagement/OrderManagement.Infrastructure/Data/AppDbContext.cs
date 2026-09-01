@@ -70,6 +70,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
             entity.HasIndex(x => x.Code)
                 .IsUnique();
+
+            entity.Property(x => x.LastShopifyError).HasMaxLength(2000);
         });
     }
 

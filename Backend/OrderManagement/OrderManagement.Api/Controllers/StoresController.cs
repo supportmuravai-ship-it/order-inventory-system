@@ -30,13 +30,16 @@ public class StoresController : ControllerBase
 
     private readonly ShopifyReconciliationService _shopifyReconciliationService;
 
+    private readonly IConfiguration _configuration;
+
     public StoresController(
     AppDbContext dbContext,
     UserManager<ApplicationUser> userManager,
     IStoreAccessService storeAccessService,
     ShopifyAdminClient shopifyAdminClient,
     ShopifyOrderSyncService shopifyOrderSyncService,
-    ShopifyReconciliationService shopifyReconciliationService)
+    ShopifyReconciliationService shopifyReconciliationService,
+    IConfiguration configuration)
     {
         _dbContext = dbContext;
         _userManager = userManager;
@@ -44,6 +47,7 @@ public class StoresController : ControllerBase
         _shopifyAdminClient = shopifyAdminClient;
         _shopifyOrderSyncService = shopifyOrderSyncService;
         _shopifyReconciliationService = shopifyReconciliationService;
+        _configuration = configuration;
     }
 
     [HttpGet]
@@ -95,58 +99,6 @@ public class StoresController : ControllerBase
         {
             message = "You have access to this store.",
             storeId
-        });
-    }
-
-    [HttpPost("{storeId:int}/shopify/test")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> TestShopifyConnection(
-    int storeId,
-    CancellationToken cancellationToken)
-    {
-        var userId = _userManager.GetUserId(User);
-
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized();
-        }
-
-        var hasAccess = await _storeAccessService.HasAccessAsync(
-            userId,
-            storeId);
-
-        if (!hasAccess)
-        {
-            return Forbid();
-        }
-
-        var store = await _dbContext.Stores
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                x => x.Id == storeId && x.IsActive,
-                cancellationToken);
-
-        if (store is null)
-        {
-            return NotFound("Store not found.");
-        }
-
-        if (string.IsNullOrWhiteSpace(store.ShopDomain))
-        {
-            return BadRequest(
-                "Shopify domain is not configured for this store.");
-        }
-
-        var orders =
-    await _shopifyAdminClient.GetRecentOrdersAsync(
-        store.Id,
-        store.ShopDomain,
-        cancellationToken);
-
-        return Ok(new
-        {
-            count = orders.Count,
-            orders
         });
     }
 
@@ -204,65 +156,6 @@ public class StoresController : ControllerBase
         return Ok(finalResult);
     }
 
-    [HttpPost("{storeId:int}/shopify/register-webhooks")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> RegisterShopifyWebhooks(
-    int storeId,
-    CancellationToken cancellationToken)
-    {
-        var userId = _userManager.GetUserId(User);
-
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized();
-        }
-
-        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
-
-        if (!hasAccess)
-        {
-            return Forbid();
-        }
-
-        var store = await _dbContext.Stores
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                x => x.Id == storeId && x.IsActive,
-                cancellationToken);
-
-        if (store is null)
-        {
-            return NotFound("Store not found.");
-        }
-
-        if (string.IsNullOrWhiteSpace(store.ShopDomain))
-        {
-            return BadRequest("Shopify domain is not configured for this store.");
-        }
-
-        const string callbackUrl =
-            "https://mardi-fiddle-implode.ngrok-free.dev/api/webhooks/shopify/orders";
-
-        var createdId = await _shopifyAdminClient.RegisterWebhookAsync(
-            store.Id,
-            store.ShopDomain,
-            "ORDERS_CREATE",
-            callbackUrl,
-            cancellationToken);
-
-        var updatedId = await _shopifyAdminClient.RegisterWebhookAsync(
-            store.Id,
-            store.ShopDomain,
-            "ORDERS_UPDATED",
-            callbackUrl,
-            cancellationToken);
-
-        return Ok(new
-        {
-            ordersCreateWebhookId = createdId,
-            ordersUpdatedWebhookId = updatedId
-        });
-    }
 
     [HttpPost("{storeId:int}/shopify/reconcile")]
     [Authorize(Roles = "Admin")]

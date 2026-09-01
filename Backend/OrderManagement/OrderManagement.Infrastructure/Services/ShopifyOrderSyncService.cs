@@ -228,6 +228,13 @@ public class ShopifyOrderSyncService
 
     private static string GetCustomerName(ShopifyOrder order)
     {
+        var customName = GetCustomAttribute(order, "Full Name");
+
+        if (!string.IsNullOrWhiteSpace(customName))
+        {
+            return customName;
+        }
+
         var shippingName = $"{order.ShippingAddress?.FirstName} {order.ShippingAddress?.LastName}".Trim();
 
         if (!string.IsNullOrWhiteSpace(shippingName))

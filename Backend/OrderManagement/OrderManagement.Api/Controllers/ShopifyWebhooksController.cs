@@ -56,6 +56,12 @@ public class ShopifyWebhooksController : ControllerBase
             return Unauthorized();
         }
 
+        var now = DateTime.UtcNow;
+
+        var trackedStore = await _dbContext.Stores.FirstAsync(x => x.Id == store.Id, cancellationToken);
+
+        trackedStore.LastWebhookReceivedAtUtc = now;
+        trackedStore.UpdatedAtUtc = now;
         using var payload = JsonDocument.Parse(rawBody);
 
         string? externalOrderId = null;
@@ -76,15 +82,33 @@ public class ShopifyWebhooksController : ControllerBase
             return BadRequest("Shopify webhook did not contain an order ID.");
         }
 
-        var shopifyOrder = await _shopifyAdminClient.GetOrderByIdAsync(store.Id, store.ShopDomain!, externalOrderId, cancellationToken);
-
-        if (shopifyOrder is null)
+        try
         {
-            return Ok();
+            var shopifyOrder = await _shopifyAdminClient.GetOrderByIdAsync(store.Id, store.ShopDomain!, externalOrderId, cancellationToken);
+
+            if (shopifyOrder is null)
+            {
+                return Ok();
+            }
+
+            var syncResult = await _shopifyOrderSyncService.SyncAsync(store.Id, [shopifyOrder], cancellationToken);
+
+            trackedStore.LastSuccessfulSyncAtUtc = DateTime.UtcNow;
+            trackedStore.LastShopifyError = null;
+            trackedStore.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(syncResult);
         }
+        catch (Exception ex)
+        {
+            trackedStore.LastShopifyError = ex.Message;
+            trackedStore.UpdatedAtUtc = DateTime.UtcNow;
 
-        var syncResult = await _shopifyOrderSyncService.SyncAsync(store.Id, [shopifyOrder], cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Ok(syncResult);
+            throw;
+        }
     }
 }

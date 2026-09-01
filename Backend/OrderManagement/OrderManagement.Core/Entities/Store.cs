@@ -26,4 +26,12 @@ public class Store
 
     public ICollection<Order> Orders { get; set; }
         = new List<Order>();
+
+    public DateTime? LastSuccessfulSyncAtUtc { get; set; }
+
+    public DateTime? LastReconciliationAtUtc { get; set; }
+
+    public DateTime? LastWebhookReceivedAtUtc { get; set; }
+
+    public string? LastShopifyError { get; set; }
 }
