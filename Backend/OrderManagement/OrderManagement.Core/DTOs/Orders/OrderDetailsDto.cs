@@ -60,6 +60,8 @@ public class OrderDetailsDto
 
     public string? TrenvoNoteUpdatedBy { get; set; }
 
+    public bool NeedToShip { get; set; }
+
     public List<OrderStatusHistoryDto> StatusHistory { get; set; } = [];
 
     public List<TrackingHistoryDto> TrackingHistory { get; set; } = [];

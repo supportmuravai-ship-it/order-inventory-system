@@ -27,4 +27,5 @@ public class OrderQueryRequest
     public string Sort { get; set; } = "newest";
 
     public bool? NeedsAttention { get; set; }
+    public bool? NeedToShip { get; set; }
 }

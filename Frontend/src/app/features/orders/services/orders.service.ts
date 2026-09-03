@@ -61,6 +61,10 @@ export class OrdersService {
       params = params.set('needsAttention', query.needsAttention);
     }
 
+    if (query.needToShip !== undefined) {
+  params = params.set('needToShip', query.needToShip);
+}
+
     if (query.sort) {
       params = params.set('sort', query.sort);
     }
@@ -91,6 +95,18 @@ export class OrdersService {
       },
     );
   }
+
+  updateNeedToShip(storeId: number, orderId: number, needToShip: boolean): Observable<void> {
+  return this.http.put<void>(
+    `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/need-to-ship`,
+    {
+      needToShip,
+    },
+    {
+      withCredentials: true,
+    },
+  );
+}
 
   updateTrackingNumber(
     storeId: number,

@@ -80,6 +80,9 @@ export class WorkspaceComponent implements OnInit {
 
   readonly openTicketCount = signal(0);
 
+  readonly needToShipOnly = signal(false);
+readonly savingNeedToShipOrderId = signal<number | null>(null);
+
   readonly summary = signal<OrderSummary>({
     totalOrders: 0,
     confirmed: 0,
@@ -92,6 +95,7 @@ export class WorkspaceComponent implements OnInit {
     repeatedOrder: 0,
     needsAttention: 0,
     new: 0,
+    needToShip: 0
   });
 
   readonly summaryLoading = signal(true);
@@ -135,8 +139,9 @@ export class WorkspaceComponent implements OnInit {
         invoiceStatus: this.selectedInvoiceStatus(),
 
         needsAttention: this.needsAttentionOnly() ? true : undefined,
+needToShip: this.needToShipOnly() ? true : undefined,
 
-        sort: this.sort(),
+sort: this.sort(),
       })
       .subscribe({
         next: (result) => {
@@ -250,25 +255,36 @@ export class WorkspaceComponent implements OnInit {
     this.selectedInvoiceStatus.set(undefined);
 
     this.page.set(1);
-    this.needsAttentionOnly.set(false);
+this.needsAttentionOnly.set(false);
+this.needToShipOnly.set(false);
 
-    this.loadOrders();
+this.loadOrders();
     this.loadSummary();
   }
 
   showNeedsAttention(): void {
-    this.needsAttentionOnly.set(true);
-    this.page.set(1);
+  this.needsAttentionOnly.set(true);
+  this.needToShipOnly.set(false);
+  this.page.set(1);
 
-    this.loadOrders();
-  }
+  this.loadOrders();
+}
+
+showNeedToShip(): void {
+  this.needToShipOnly.set(true);
+  this.needsAttentionOnly.set(false);
+  this.page.set(1);
+
+  this.loadOrders();
+}
 
   showAllOrders(): void {
-    this.needsAttentionOnly.set(false);
-    this.page.set(1);
+  this.needsAttentionOnly.set(false);
+  this.needToShipOnly.set(false);
+  this.page.set(1);
 
-    this.loadOrders();
-  }
+  this.loadOrders();
+}
 
   changeSort(event: Event): void {
     const select = event.target as HTMLSelectElement;
@@ -646,6 +662,18 @@ export class WorkspaceComponent implements OnInit {
     return classes[status] ?? 'bg-gray-100 text-gray-700';
   }
 
+  getOrderRowClasses(order: OrderListItem): string {
+  if (order.needsAttention) {
+    return 'bg-red-100 hover:bg-red-200';
+  }
+
+  if (order.needToShip) {
+    return 'bg-indigo-50 hover:bg-indigo-100';
+  }
+
+  return this.getStatusRowClasses(order.orderStatus);
+}
+
   getSourceName(source: number): string {
     const sources: Record<number, string> = {
       0: 'Shopify',
@@ -837,4 +865,51 @@ export class WorkspaceComponent implements OnInit {
   openTickets(): void {
     this.router.navigate(['/workspace/tickets']);
   }
+
+  updateNeedToShip(order: OrderListItem, needToShip: boolean): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
+  }
+
+  this.savingNeedToShipOrderId.set(order.id);
+  this.errorMessage.set('');
+  this.statusUpdateMessage.set('');
+
+  this.ordersService.updateNeedToShip(store.id, order.id, needToShip).subscribe({
+    next: () => {
+      this.savingNeedToShipOrderId.set(null);
+
+      this.statusUpdateMessage.set(
+        needToShip
+          ? `${order.displayOrderId} marked as Need to Ship.`
+          : `${order.displayOrderId} removed from Need to Ship.`,
+      );
+
+      this.loadOrders();
+      this.loadSummary();
+    },
+
+    error: (error: HttpErrorResponse) => {
+      this.savingNeedToShipOrderId.set(null);
+
+      if (error.status === 403) {
+        this.errorMessage.set('You are not allowed to update Need to Ship.');
+        return;
+      }
+
+      if (typeof error.error === 'string' && error.error.trim()) {
+        this.errorMessage.set(error.error);
+        return;
+      }
+
+      this.errorMessage.set('Could not update Need to Ship.');
+    },
+  });
+}
+
+canMarkNeedToShip(order: OrderListItem): boolean {
+  return order.orderStatus === 0 || order.orderStatus === 8;
+}
 }

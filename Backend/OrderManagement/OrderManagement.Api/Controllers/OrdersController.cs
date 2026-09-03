@@ -162,6 +162,12 @@ public class OrdersController : ControllerBase
                 x.InvoiceStatus == request.InvoiceStatus.Value);
         }
 
+        if (request.NeedToShip.HasValue)
+        {
+            query = query.Where(x =>
+                x.NeedToShip == request.NeedToShip.Value);
+        }
+
         if (request.NeedsAttention == true)
         {
             var attentionThreshold =
@@ -252,6 +258,7 @@ public class OrdersController : ControllerBase
 
                     TrackingNumber = x.TrackingNumber,
                     OrderStatus = x.OrderStatus,
+                    NeedToShip = x.NeedToShip,
 
                     LocationLink = x.LocationLink,
                     FinalDecision = x.FinalDecision,
@@ -424,6 +431,9 @@ public class OrdersController : ControllerBase
                     x.OrderStatus != OrderStatus.RepeatedOrder &&
                     x.LastStatusChangedAtUtc <= attentionThreshold),
 
+                NeedToShip = group.Count(x =>
+                    x.NeedToShip),
+
                 New = group.Count(x =>
                     x.OrderStatus == OrderStatus.New),
             })
@@ -482,6 +492,8 @@ public class OrdersController : ControllerBase
                 TrackingNumber = x.TrackingNumber,
 
                 OrderStatus = x.OrderStatus,
+
+                NeedToShip = x.NeedToShip,
 
                 LocationLink = x.LocationLink,
 
@@ -724,6 +736,13 @@ public class OrdersController : ControllerBase
         _dbContext.OrderStatusHistories.Add(statusHistory);
 
         order.OrderStatus = request.OrderStatus;
+
+        if (request.OrderStatus != OrderStatus.New &&
+            request.OrderStatus != OrderStatus.Confirmed)
+        {
+            order.NeedToShip = false;
+        }
+
         order.LastStatusChangedAtUtc = now;
         order.UpdatedAtUtc = now;
 
@@ -1511,5 +1530,57 @@ public class OrdersController : ControllerBase
                 order.Id,
                 order.DisplayOrderId
             });
+    }
+
+    [HttpPut("{orderId:int}/need-to-ship")]
+    [Authorize(Roles = "Admin,CustomerSupport,WarehouseStaff")]
+    public async Task<IActionResult> UpdateNeedToShip(
+    int storeId,
+    int orderId,
+    UpdateNeedToShipRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        var order = await _dbContext.Orders
+            .SingleOrDefaultAsync(x =>
+                x.StoreId == storeId &&
+                x.Id == orderId);
+
+        if (order is null)
+        {
+            return NotFound();
+        }
+
+        if (request.NeedToShip &&
+            order.OrderStatus != OrderStatus.New &&
+            order.OrderStatus != OrderStatus.Confirmed)
+        {
+            return BadRequest(
+                "Need To Ship can only be enabled for New or Confirmed orders.");
+        }
+
+        if (order.NeedToShip == request.NeedToShip)
+        {
+            return NoContent();
+        }
+
+        order.NeedToShip = request.NeedToShip;
+        order.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
     }
 }

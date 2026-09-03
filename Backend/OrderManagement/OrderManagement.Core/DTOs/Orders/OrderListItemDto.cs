@@ -42,4 +42,6 @@ public class OrderListItemDto
 
     public double HoursInCurrentStatus { get; set; }
     public List<OrderItemDto> Items { get; set; } = [];
+
+    public bool NeedToShip { get; set; }
 }

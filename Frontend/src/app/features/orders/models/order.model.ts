@@ -35,6 +35,7 @@ export interface OrderListItem {
 
   needsAttention: boolean;
   hoursInCurrentStatus: number;
+  needToShip: boolean;
 
   items: OrderItem[];
 }
@@ -92,6 +93,7 @@ export interface OrderDetails {
 
   needsAttention: boolean;
   hoursInCurrentStatus: number;
+  needToShip: boolean;
 
   statusHistory: OrderStatusHistory[];
   trackingHistory: TrackingHistory[];
@@ -124,6 +126,8 @@ export interface OrderQuery {
 
   sort?: string;
   needsAttention?: boolean;
+
+  needToShip?: boolean;
 }
 
 export interface OrderSummary {
@@ -138,6 +142,7 @@ export interface OrderSummary {
   repeatedOrder: number;
   needsAttention: number;
   new: number;
+  needToShip: number;
 }
 
 export interface CsvImportError {

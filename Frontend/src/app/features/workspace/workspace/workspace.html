@@ -184,7 +184,7 @@
               <p class="text-sm text-gray-500">Loading summary...</p>
             </div>
           } @else {
-            <div class="grid gap-3 grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11">
+            <div class="grid gap-3 grid-cols-4 sm:grid-cols-5 lg:grid-cols-8 xl:grid-cols-12">
               <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <p class="text-xs font-medium uppercase text-gray-500">Total Orders</p>
 
@@ -267,6 +267,27 @@
 
               <button
                 type="button"
+                (click)="showNeedToShip()"
+                [ngClass]="
+                  needToShipOnly()
+                    ? 'border-indigo-500 bg-indigo-100 ring-2 ring-indigo-200'
+                    : 'border-indigo-300 bg-indigo-50 hover:bg-indigo-100'
+                "
+                class="rounded-xl border p-4 text-left transition"
+              >
+                <p class="text-xs font-medium uppercase text-indigo-700">Need To Ship</p>
+
+                <p class="mt-2 text-2xl font-bold text-indigo-900">
+                  {{ summary().needToShip }}
+                </p>
+
+                @if (needToShipOnly()) {
+                  <p class="mt-1 text-xs font-medium text-indigo-600">Filter active</p>
+                }
+              </button>
+
+              <button
+                type="button"
                 (click)="showNeedsAttention()"
                 [ngClass]="
                   needsAttentionOnly()
@@ -323,7 +344,7 @@
               <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <h2 class="font-semibold text-gray-900">All Orders</h2>
 
-                @if (needsAttentionOnly()) {
+                @if (needsAttentionOnly() || needToShipOnly()) {
                   <button
                     type="button"
                     (click)="showAllOrders()"
@@ -550,6 +571,8 @@
 
                   <th class="whitespace-nowrap px-4 py-3">Order Status</th>
 
+                  <th class="whitespace-nowrap px-4 py-3">Shipping Action</th>
+
                   <th class="whitespace-nowrap px-4 py-3">Location Link</th>
 
                   <th class="whitespace-nowrap px-4 py-3">Final Decision</th>
@@ -569,7 +592,7 @@
               <tbody class="divide-y divide-gray-100">
                 @if (orders().length === 0) {
                   <tr>
-                    <td colspan="22" class="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colspan="23" class="px-6 py-12 text-center text-sm text-gray-500">
                       No orders found for the current search or filters.
                     </td>
                   </tr>
@@ -577,13 +600,7 @@
 
                 @for (order of orders(); track order.id) {
                   @for (item of order.items; track item.id; let first = $first) {
-                    <tr
-                      [ngClass]="
-                        order.needsAttention
-                          ? 'bg-red-100 hover:bg-red-200'
-                          : getStatusRowClasses(order.orderStatus)
-                      "
-                    >
+                    <tr [ngClass]="getOrderRowClasses(order)">
                       <td class="whitespace-nowrap px-4 py-3 text-gray-600">
                         @if (first) {
                           {{ order.orderDateUtc | date: 'dd MMM yyyy' }}
@@ -607,6 +624,15 @@
                                 title="This order has remained in its current status for 12+ hours"
                               >
                                 {{ order.hoursInCurrentStatus | number: '1.0-0' }}h
+                              </span>
+                            }
+
+                            @if (order.needToShip) {
+                              <span
+                                class="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700"
+                                title="This order is marked as Need to Ship"
+                              >
+                                Need to Ship
                               </span>
                             }
                           </button>
@@ -780,6 +806,40 @@
                             >
                               {{ getStatusName(order.orderStatus) }}
                             </button>
+                          }
+                        }
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3">
+                        @if (first) {
+                          @if (order.needToShip) {
+                            <button
+                              type="button"
+                              (click)="updateNeedToShip(order, false)"
+                              [disabled]="savingNeedToShipOrderId() === order.id"
+                              class="rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              @if (savingNeedToShipOrderId() === order.id) {
+                                Saving...
+                              } @else {
+                                Remove
+                              }
+                            </button>
+                          } @else if (canMarkNeedToShip(order)) {
+                            <button
+                              type="button"
+                              (click)="updateNeedToShip(order, true)"
+                              [disabled]="savingNeedToShipOrderId() === order.id"
+                              class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              @if (savingNeedToShipOrderId() === order.id) {
+                                Saving...
+                              } @else {
+                                Need to Ship
+                              }
+                            </button>
+                          } @else {
+                            <span class="text-gray-400">—</span>
                           }
                         }
                       </td>

@@ -23,4 +23,6 @@ public class OrderSummaryDto
     public int NeedsAttention { get; set; }
 
     public int New { get; set; }
+
+    public int NeedToShip { get; set; }
 }

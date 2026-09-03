@@ -43,6 +43,8 @@ public class Order
 
     public DateTime UpdatedAtUtc { get; set; }
 
+    public bool NeedToShip { get; set; }
+
     public byte[] RowVersion { get; set; } = [];
 
     public Store Store { get; set; } = null!;
