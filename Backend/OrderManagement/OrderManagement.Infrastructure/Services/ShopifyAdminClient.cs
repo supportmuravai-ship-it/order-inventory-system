@@ -9,13 +9,16 @@ public class ShopifyAdminClient
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
+    private readonly ShopifyAccessTokenService _accessTokenService;
 
     public ShopifyAdminClient(
-        HttpClient httpClient,
-        IConfiguration configuration)
+    HttpClient httpClient,
+    IConfiguration configuration,
+    ShopifyAccessTokenService accessTokenService)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _accessTokenService = accessTokenService;
     }
 
     public async Task<List<ShopifyOrder>> GetRecentOrdersAsync(
@@ -23,21 +26,21 @@ public class ShopifyAdminClient
         string shopDomain,
         CancellationToken cancellationToken = default)
     {
-        var clientId = _configuration[
-            $"Shopify:Stores:{storeId}:ClientId"];
+        //var clientId = _configuration[
+        //    $"Shopify:Stores:{storeId}:ClientId"];
 
-        var clientSecret = _configuration[
-            $"Shopify:Stores:{storeId}:ClientSecret"];
+        //var clientSecret = _configuration[
+        //    $"Shopify:Stores:{storeId}:ClientSecret"];
 
         var apiVersion = _configuration[
             "Shopify:ApiVersion"];
 
-        if (string.IsNullOrWhiteSpace(clientId) ||
-            string.IsNullOrWhiteSpace(clientSecret))
-        {
-            throw new InvalidOperationException(
-                $"Shopify credentials are not configured for Store {storeId}.");
-        }
+        //if (string.IsNullOrWhiteSpace(clientId) ||
+        //    string.IsNullOrWhiteSpace(clientSecret))
+        //{
+        //    throw new InvalidOperationException(
+        //        $"Shopify credentials are not configured for Store {storeId}.");
+        //}
 
         if (string.IsNullOrWhiteSpace(apiVersion))
         {
@@ -45,11 +48,9 @@ public class ShopifyAdminClient
                 "Shopify API version is not configured.");
         }
 
-        var accessToken = await GetAccessTokenAsync(
-            shopDomain,
-            clientId,
-            clientSecret,
-            cancellationToken);
+        var accessToken = await _accessTokenService.GetAccessTokenAsync(
+    storeId,
+    cancellationToken);
 
         // GraphQL query
         const string query = """
@@ -222,21 +223,21 @@ public class ShopifyAdminClient
     string? after = null,
     CancellationToken cancellationToken = default)
     {
-        var clientId = _configuration[$"Shopify:Stores:{storeId}:ClientId"];
-        var clientSecret = _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
+        //var clientId = _configuration[$"Shopify:Stores:{storeId}:ClientId"];
+        //var clientSecret = _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
         var apiVersion = _configuration["Shopify:ApiVersion"];
 
-        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-        {
-            throw new InvalidOperationException($"Shopify credentials are not configured for Store {storeId}.");
-        }
+        //if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+        //{
+        //    throw new InvalidOperationException($"Shopify credentials are not configured for Store {storeId}.");
+        //}
 
         if (string.IsNullOrWhiteSpace(apiVersion))
         {
             throw new InvalidOperationException("Shopify API version is not configured.");
         }
 
-        var accessToken = await GetAccessTokenAsync(shopDomain, clientId, clientSecret, cancellationToken);
+        var accessToken = await _accessTokenService.GetAccessTokenAsync(storeId, cancellationToken);
 
         const string query = """
     query GetOrders($first: Int!, $after: String) {
@@ -361,21 +362,21 @@ public class ShopifyAdminClient
 
     public async Task<ShopifyOrder?> GetOrderByIdAsync(int storeId, string shopDomain, string externalOrderId, CancellationToken cancellationToken = default)
     {
-        var clientId = _configuration[$"Shopify:Stores:{storeId}:ClientId"];
-        var clientSecret = _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
+        //var clientId = _configuration[$"Shopify:Stores:{storeId}:ClientId"];
+        //var clientSecret = _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
         var apiVersion = _configuration["Shopify:ApiVersion"];
 
-        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-        {
-            throw new InvalidOperationException($"Shopify credentials are not configured for Store {storeId}.");
-        }
+        //if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+        //{
+        //    throw new InvalidOperationException($"Shopify credentials are not configured for Store {storeId}.");
+        //}
 
         if (string.IsNullOrWhiteSpace(apiVersion))
         {
             throw new InvalidOperationException("Shopify API version is not configured.");
         }
 
-        var accessToken = await GetAccessTokenAsync(shopDomain, clientId, clientSecret, cancellationToken);
+        var accessToken = await _accessTokenService.GetAccessTokenAsync(storeId, cancellationToken);
 
         const string query = """
     query GetOrder($id: ID!) {
@@ -486,21 +487,21 @@ public class ShopifyAdminClient
     string? after = null,
     CancellationToken cancellationToken = default)
     {
-        var clientId = _configuration[$"Shopify:Stores:{storeId}:ClientId"];
-        var clientSecret = _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
+        //var clientId = _configuration[$"Shopify:Stores:{storeId}:ClientId"];
+        //var clientSecret = _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
         var apiVersion = _configuration["Shopify:ApiVersion"];
 
-        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-        {
-            throw new InvalidOperationException($"Shopify credentials are not configured for Store {storeId}.");
-        }
+        //if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+        //{
+        //    throw new InvalidOperationException($"Shopify credentials are not configured for Store {storeId}.");
+        //}
 
         if (string.IsNullOrWhiteSpace(apiVersion))
         {
             throw new InvalidOperationException("Shopify API version is not configured.");
         }
 
-        var accessToken = await GetAccessTokenAsync(shopDomain, clientId, clientSecret, cancellationToken);
+        var accessToken = await _accessTokenService.GetAccessTokenAsync(storeId, cancellationToken);
 
         const string query = """
     query GetUpdatedOrders($first: Int!, $after: String, $searchQuery: String!) {
@@ -631,5 +632,120 @@ public class ShopifyAdminClient
             HasNextPage = connection.PageInfo.HasNextPage,
             EndCursor = connection.PageInfo.EndCursor
         };
+    }
+
+    public async Task RegisterWebhookAsync(
+    int storeId,
+    string shopDomain,
+    string topic,
+    string callbackUrl,
+    CancellationToken cancellationToken = default)
+    {
+        var apiVersion = _configuration["Shopify:ApiVersion"];
+
+        if (string.IsNullOrWhiteSpace(apiVersion))
+        {
+            throw new InvalidOperationException(
+                "Shopify API version is not configured.");
+        }
+
+        var accessToken = await _accessTokenService.GetAccessTokenAsync(
+            storeId,
+            cancellationToken);
+
+        const string query = """
+    mutation RegisterWebhook(
+        $topic: WebhookSubscriptionTopic!,
+        $webhookSubscription: WebhookSubscriptionInput!) {
+      webhookSubscriptionCreate(
+        topic: $topic,
+        webhookSubscription: $webhookSubscription) {
+
+        webhookSubscription {
+          id
+          topic
+          uri
+        }
+
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    """;
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"https://{shopDomain}/admin/api/{apiVersion}/graphql.json");
+
+        request.Headers.Add(
+            "X-Shopify-Access-Token",
+            accessToken);
+
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(new
+            {
+                query,
+                variables = new
+                {
+                    topic,
+                    webhookSubscription = new
+                    {
+                        uri = callbackUrl
+                    }
+                }
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+        using var response = await _httpClient.SendAsync(
+            request,
+            cancellationToken);
+
+        var responseText = await response.Content.ReadAsStringAsync(
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(
+                $"Shopify webhook registration failed with status {(int)response.StatusCode}.");
+        }
+
+        using var json = JsonDocument.Parse(responseText);
+
+        var root = json.RootElement;
+
+        if (root.TryGetProperty("errors", out var graphQlErrors))
+        {
+            throw new InvalidOperationException(
+                $"Shopify webhook GraphQL error: {graphQlErrors}");
+        }
+
+        var payload = root
+            .GetProperty("data")
+            .GetProperty("webhookSubscriptionCreate");
+
+        var userErrors = payload.GetProperty("userErrors");
+
+        if (userErrors.GetArrayLength() > 0)
+        {
+            var messages = userErrors
+                .EnumerateArray()
+                .Select(x => x.GetProperty("message").GetString())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            var onlyDuplicateErrors = messages.All(x =>
+                x!.Contains(
+                    "Address for this topic has already been taken",
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (!onlyDuplicateErrors)
+            {
+                throw new InvalidOperationException(
+                    $"Shopify webhook error: {string.Join(" | ", messages)}");
+            }
+        }
     }
 }

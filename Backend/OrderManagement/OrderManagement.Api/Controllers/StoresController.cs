@@ -3,16 +3,20 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OrderManagement.Core.DTOs.Stores;
 using OrderManagement.Core.Entities;
 using OrderManagement.Core.Interfaces;
 using OrderManagement.Infrastructure.Data;
 using OrderManagement.Infrastructure.Services;
+using OrderManagement.Infrastructure.Shopify;
 using OrderManagement.Infrastructure.Shopify.Models;
 using System.Diagnostics.Metrics;
+using System.Security.Cryptography;
+using System.Text;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Net.WebRequestMethods;
-
+using System.Text;
 namespace OrderManagement.Api.Controllers;
 
 [ApiController]
@@ -32,6 +36,8 @@ public class StoresController : ControllerBase
 
     private readonly IConfiguration _configuration;
 
+    private readonly ShopifyOAuthOptions _shopifyOAuthOptions;
+
     public StoresController(
     AppDbContext dbContext,
     UserManager<ApplicationUser> userManager,
@@ -39,7 +45,8 @@ public class StoresController : ControllerBase
     ShopifyAdminClient shopifyAdminClient,
     ShopifyOrderSyncService shopifyOrderSyncService,
     ShopifyReconciliationService shopifyReconciliationService,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    IOptions<ShopifyOAuthOptions> shopifyOAuthOptions)
     {
         _dbContext = dbContext;
         _userManager = userManager;
@@ -48,6 +55,7 @@ public class StoresController : ControllerBase
         _shopifyOrderSyncService = shopifyOrderSyncService;
         _shopifyReconciliationService = shopifyReconciliationService;
         _configuration = configuration;
+        _shopifyOAuthOptions = shopifyOAuthOptions.Value;
     }
 
     [HttpGet]
@@ -180,5 +188,54 @@ public class StoresController : ControllerBase
         var result = await _shopifyReconciliationService.ReconcileStoreAsync(storeId, updatedSinceUtc, cancellationToken);
 
         return Ok(result);
+    }
+
+    [HttpGet("{storeId:int}/shopify/connect")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ConnectShopify(int storeId)
+    {
+        var store = await _dbContext.Stores
+            .FirstOrDefaultAsync(x => x.Id == storeId);
+
+        if (store == null)
+        {
+            return NotFound("Store not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(store.ShopDomain))
+        {
+            return BadRequest("ShopDomain must be set before connecting Shopify.");
+        }
+
+        var shopDomain = store.ShopDomain.Trim().ToLowerInvariant();
+
+        if (!shopDomain.EndsWith(".myshopify.com", StringComparison.Ordinal))
+        {
+            return BadRequest("Invalid Shopify shop domain.");
+        }
+
+        var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(32))
+            .ToLowerInvariant();
+
+        var stateHash = Convert.ToHexString(
+        SHA256.HashData(Encoding.UTF8.GetBytes(state)))
+    .ToLowerInvariant();
+
+        store.ShopifyOAuthStateHash = stateHash;
+        store.ShopifyOAuthStateExpiresAtUtc = DateTime.UtcNow.AddMinutes(10);
+
+        await _dbContext.SaveChangesAsync();
+
+        var redirectUri =
+            $"{_shopifyOAuthOptions.AppBaseUrl.TrimEnd('/')}/api/shopify/oauth/callback";
+
+        var authorizationUrl =
+            $"https://{shopDomain}/admin/oauth/authorize" +
+            $"?client_id={Uri.EscapeDataString(_shopifyOAuthOptions.ClientId)}" +
+            $"&scope={Uri.EscapeDataString(_shopifyOAuthOptions.Scopes)}" +
+            $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+            $"&state={Uri.EscapeDataString(state)}";
+
+        return Redirect(authorizationUrl);
     }
 }

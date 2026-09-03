@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { OrdersService } from '../../orders/services/orders.service';
 import { OrderListItem, OrderSummary } from '../../orders/models/order.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { TicketService } from '../../Tickets/ticket.service';
 
 @Component({
   selector: 'app-workspace',
@@ -18,6 +19,7 @@ export class WorkspaceComponent implements OnInit {
 
   private readonly ordersService = inject(OrdersService);
   private readonly router = inject(Router);
+  private readonly ticketService = inject(TicketService);
 
   readonly orders = signal<OrderListItem[]>([]);
 
@@ -76,6 +78,8 @@ export class WorkspaceComponent implements OnInit {
 
   readonly mobileMenuOpen = signal(false);
 
+  readonly openTicketCount = signal(0);
+
   readonly summary = signal<OrderSummary>({
     totalOrders: 0,
     confirmed: 0,
@@ -98,6 +102,7 @@ export class WorkspaceComponent implements OnInit {
   ngOnInit(): void {
     this.loadOrders();
     this.loadSummary();
+    this.loadOpenTicketCount();
   }
 
   private loadOrders(): void {
@@ -797,18 +802,39 @@ export class WorkspaceComponent implements OnInit {
   }
 
   getStatusRowClasses(status: number): string {
-  const classes: Record<number, string> = {
-    0: 'bg-purple-50 hover:bg-purple-100', // Confirmed
-    1: 'bg-blue-50 hover:bg-blue-100',     // Shipped
-    2: 'bg-green-50 hover:bg-green-100',   // Delivered
-    3: 'bg-orange-50 hover:bg-orange-100', // No Response
-    4: 'bg-teal-50 hover:bg-teal-100',       // Return
-    5: 'bg-yellow-50 hover:bg-yellow-100', // Return In Process
-    6: 'bg-gray-100 hover:bg-gray-200',    // Cancelled
-    7: 'bg-pink-50 hover:bg-pink-100',     // Repeated Order
-    8: 'bg-cyan-50 hover:bg-cyan-100',     // New
-  };
+    const classes: Record<number, string> = {
+      0: 'bg-purple-50 hover:bg-purple-100', // Confirmed
+      1: 'bg-blue-50 hover:bg-blue-100', // Shipped
+      2: 'bg-green-50 hover:bg-green-100', // Delivered
+      3: 'bg-orange-50 hover:bg-orange-100', // No Response
+      4: 'bg-teal-50 hover:bg-teal-100', // Return
+      5: 'bg-yellow-50 hover:bg-yellow-100', // Return In Process
+      6: 'bg-gray-100 hover:bg-gray-200', // Cancelled
+      7: 'bg-pink-50 hover:bg-pink-100', // Repeated Order
+      8: 'bg-cyan-50 hover:bg-cyan-100', // New
+    };
 
-  return classes[status] ?? 'hover:bg-gray-50';
-}
+    return classes[status] ?? 'hover:bg-gray-50';
+  }
+
+  private loadOpenTicketCount(): void {
+    const store = this.authService.selectedStore();
+
+    if (!store) {
+      return;
+    }
+
+    this.ticketService.getMyOpenCount(store.id).subscribe({
+      next: (count) => {
+        this.openTicketCount.set(count);
+      },
+      error: () => {
+        this.openTicketCount.set(0);
+      },
+    });
+  }
+
+  openTickets(): void {
+    this.router.navigate(['/workspace/tickets']);
+  }
 }

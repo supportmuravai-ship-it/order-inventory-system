@@ -51,7 +51,14 @@ public class ShopifyWebhooksController : ControllerBase
         using var reader = new StreamReader(Request.Body);
         var rawBody = await reader.ReadToEndAsync(cancellationToken);
 
-        if (!_webhookVerifier.IsValid(store.Id, rawBody, receivedHmac))
+        var usesOAuth =
+    !string.IsNullOrWhiteSpace(store.ShopifyAccessTokenEncrypted);
+
+        if (!_webhookVerifier.IsValid(
+                store.Id,
+                usesOAuth,
+                rawBody,
+                receivedHmac))
         {
             return Unauthorized();
         }

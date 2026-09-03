@@ -13,11 +13,18 @@ public class ShopifyWebhookVerifier
         _configuration = configuration;
     }
 
-    public bool IsValid(int storeId, string rawBody, string receivedHmac)
+    public bool IsValid(
+        int storeId,
+        bool usesOAuth,
+        string rawBody,
+        string receivedHmac)
     {
-        var clientSecret = _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
+        var clientSecret = usesOAuth
+            ? _configuration["Shopify:ClientSecret"]
+            : _configuration[$"Shopify:Stores:{storeId}:ClientSecret"];
 
-        if (string.IsNullOrWhiteSpace(clientSecret) || string.IsNullOrWhiteSpace(receivedHmac))
+        if (string.IsNullOrWhiteSpace(clientSecret) ||
+            string.IsNullOrWhiteSpace(receivedHmac))
         {
             return false;
         }
@@ -26,6 +33,7 @@ public class ShopifyWebhookVerifier
         var bodyBytes = Encoding.UTF8.GetBytes(rawBody);
 
         using var hmac = new HMACSHA256(keyBytes);
+
         var calculatedHash = hmac.ComputeHash(bodyBytes);
 
         byte[] receivedHash;
@@ -40,6 +48,8 @@ public class ShopifyWebhookVerifier
         }
 
         return calculatedHash.Length == receivedHash.Length &&
-               CryptographicOperations.FixedTimeEquals(calculatedHash, receivedHash);
+               CryptographicOperations.FixedTimeEquals(
+                   calculatedHash,
+                   receivedHash);
     }
 }

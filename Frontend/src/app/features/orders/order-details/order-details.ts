@@ -6,11 +6,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { OrderDetails } from '../models/order.model';
 import { OrdersService } from '../services/orders.service';
+import { TicketService } from '../../Tickets/ticket.service';
+import { AssignableTicketUser } from '../../Tickets/ticket.models';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-order-details',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   styleUrl: './order-details.css',
   templateUrl: './order-details.html',
 })
@@ -48,6 +51,17 @@ export class OrderDetailsComponent implements OnInit {
 
   readonly savingTrenvoNote = signal(false);
   readonly trenvoNoteValue = signal('');
+
+  private readonly ticketService = inject(TicketService);
+
+readonly createTicketOpen = signal(false);
+readonly assignableTicketUsers = signal<AssignableTicketUser[]>([]);
+readonly loadingTicketUsers = signal(false);
+readonly creatingTicket = signal(false);
+
+ticketAssignedToUserId = '';
+ticketTitle = '';
+ticketMessage = '';
 
   ngOnInit(): void {
     this.loadOrder();
@@ -494,5 +508,81 @@ saveTrenvoNote(): void {
         );
       },
     });
+}
+
+openCreateTicket(): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
+  }
+
+  this.ticketAssignedToUserId = '';
+  this.ticketTitle = '';
+  this.ticketMessage = '';
+
+  this.createTicketOpen.set(true);
+  this.loadingTicketUsers.set(true);
+
+  this.ticketService.getAssignableUsers(store.id).subscribe({
+    next: (users) => {
+      this.assignableTicketUsers.set(users);
+      this.loadingTicketUsers.set(false);
+    },
+    error: () => {
+      this.assignableTicketUsers.set([]);
+      this.loadingTicketUsers.set(false);
+    },
+  });
+}
+
+closeCreateTicket(): void {
+  if (this.creatingTicket()) {
+    return;
+  }
+
+  this.createTicketOpen.set(false);
+}
+
+createTicket(): void {
+  const order = this.order();
+
+  if (!order) {
+    return;
+  }
+
+  if (
+    !this.ticketAssignedToUserId ||
+    !this.ticketTitle.trim() ||
+    !this.ticketMessage.trim()
+  ) {
+    return;
+  }
+
+  this.creatingTicket.set(true);
+
+  this.ticketService
+  .createTicket(order.id, {
+    assignedToUserId: this.ticketAssignedToUserId,
+    title: this.ticketTitle.trim(),
+    message: this.ticketMessage.trim(),
+  })
+  .subscribe({
+    next: () => {
+      this.creatingTicket.set(false);
+      this.createTicketOpen.set(false);
+
+      this.errorMessage.set('');
+      this.successMessage.set('Ticket created successfully.');
+    },
+    error: (error) => {
+      this.creatingTicket.set(false);
+
+      this.successMessage.set('');
+      this.errorMessage.set(
+        error.error || 'Failed to create ticket.'
+      );
+    },
+  });
 }
 }

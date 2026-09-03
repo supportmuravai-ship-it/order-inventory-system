@@ -15,6 +15,7 @@ import { adminGuard } from './core/guards/role.guard';
 import { OrderDetailsComponent } from './features/orders/order-details/order-details';
 import { ImportOrdersComponent } from './features/orders/import-orders/import-orders';
 import { CreateOrderComponent } from './features/orders/create-order/create-order';
+import { TicketsPageComponent } from './features/Tickets/tickets-page/tickets-page';
 
 export const routes: Routes = [
   {
@@ -70,6 +71,12 @@ export const routes: Routes = [
     authGuard,
     storeGuard
   ]
+},
+
+{
+  path: 'workspace/tickets',
+  component: TicketsPageComponent,
+  canActivate: [authGuard, storeGuard],
 },
 
   {

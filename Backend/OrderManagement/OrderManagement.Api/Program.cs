@@ -5,6 +5,7 @@ using OrderManagement.Infrastructure.Data;
 using OrderManagement.Infrastructure.Data.Seed;
 using OrderManagement.Core.Interfaces;
 using OrderManagement.Infrastructure.Services;
+using OrderManagement.Infrastructure.Shopify;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,10 +17,16 @@ builder.Services.AddScoped<IStoreAccessService, StoreAccessService>();
 builder.Services.AddScoped<ICsvOrderImportService,CsvOrderImportService>();
 
 builder.Services.AddHttpClient<ShopifyAdminClient>();
+builder.Services.AddHttpClient<ShopifyAccessTokenService>();
 builder.Services.AddScoped<ShopifyOrderSyncService>();
 builder.Services.AddScoped<ShopifyWebhookVerifier>();
 builder.Services.AddScoped<ShopifyReconciliationService>();
 builder.Services.AddHostedService<ShopifyReconciliationBackgroundService>();
+
+builder.Services.AddDataProtection();
+
+builder.Services.Configure<ShopifyOAuthOptions>(
+    builder.Configuration.GetSection(ShopifyOAuthOptions.SectionName));
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>

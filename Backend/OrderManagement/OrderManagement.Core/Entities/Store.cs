@@ -34,4 +34,20 @@ public class Store
     public DateTime? LastWebhookReceivedAtUtc { get; set; }
 
     public string? LastShopifyError { get; set; }
+
+    public string? ShopifyAccessTokenEncrypted { get; set; }
+
+    public string? ShopifyRefreshTokenEncrypted { get; set; }
+
+    public DateTime? ShopifyAccessTokenExpiresAtUtc { get; set; }
+
+    public DateTime? ShopifyRefreshTokenExpiresAtUtc { get; set; }
+
+    public string? ShopifyGrantedScopes { get; set; }
+
+    public DateTime? ShopifyConnectedAtUtc { get; set; }
+
+    public string? ShopifyOAuthStateHash { get; set; }
+
+    public DateTime? ShopifyOAuthStateExpiresAtUtc { get; set; }
 }

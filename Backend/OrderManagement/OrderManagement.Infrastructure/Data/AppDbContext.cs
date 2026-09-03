@@ -35,6 +35,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     => Set<TrackingHistory>();
 
     public DbSet<OrderNote> OrderNotes => Set<OrderNote>();
+    public DbSet<OrderTicket> OrderTickets => Set<OrderTicket>();
 
     // ApplicationUser is not written as a DbSet<ApplicationUser> because AppDbContext inherits from: IdentityDbContext<ApplicationUser>. It already adds the users table internally
 
@@ -51,6 +52,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureOrderStatusHistory(builder);
         ConfigureTrackingHistory(builder);
         ConfigureOrderNotes(builder);
+        ConfigureOrderTicket(builder);
     }
 
     private static void ConfigureStore(ModelBuilder builder)
@@ -72,6 +74,18 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .IsUnique();
 
             entity.Property(x => x.LastShopifyError).HasMaxLength(2000);
+
+            entity.Property(x => x.ShopifyAccessTokenEncrypted)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.ShopifyRefreshTokenEncrypted)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.ShopifyGrantedScopes)
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.ShopifyOAuthStateHash)
+                .HasMaxLength(64);
         });
     }
 
@@ -355,6 +369,73 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 x.NoteType
             })
             .IsUnique();
+        });
+    }
+
+    private static void ConfigureOrderTicket(ModelBuilder builder)
+    {
+        var entity = builder.Entity<OrderTicket>();
+
+        entity.HasKey(x => x.Id);
+
+        entity.Property(x => x.AssignedToUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        entity.Property(x => x.CreatedByUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        entity.Property(x => x.ClosedByUserId)
+            .HasMaxLength(450);
+
+        entity.Property(x => x.Title)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        entity.Property(x => x.Message)
+            .HasMaxLength(4000)
+            .IsRequired();
+
+        entity.Property(x => x.Status)
+            .IsRequired();
+
+        entity.Property(x => x.CreatedAtUtc)
+            .IsRequired();
+
+        entity.HasOne(x => x.Order)
+            .WithMany()
+            .HasForeignKey(x => x.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasOne<ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(x => x.AssignedToUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasOne<ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasOne<ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(x => x.ClosedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasIndex(x => x.OrderId);
+
+        entity.HasOne(x => x.Store)
+    .WithMany()
+    .HasForeignKey(x => x.StoreId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasIndex(x => x.StoreId);
+
+        entity.HasIndex(x => new
+        {
+            x.AssignedToUserId,
+            x.Status
         });
     }
 }
