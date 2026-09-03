@@ -744,16 +744,71 @@
                         }
                       </td>
 
-                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
+                      <td class="whitespace-nowrap px-4 py-3">
                         @if (first) {
-                          Not uploaded
+                          @if (editingAirwayBillOrderId() === order.id) {
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="url"
+                                maxlength="1000"
+                                [value]="airwayBillEditValue()"
+                                (input)="airwayBillEditValue.set($any($event.target).value)"
+                                [disabled]="savingAirwayBillOrderId() === order.id"
+                                placeholder="Google Drive link"
+                                class="w-56 rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                              />
+
+                              <button
+                                type="button"
+                                (click)="saveAirwayBill(order)"
+                                [disabled]="savingAirwayBillOrderId() === order.id"
+                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                              >
+                                @if (savingAirwayBillOrderId() === order.id) {
+                                  Saving...
+                                } @else {
+                                  Save
+                                }
+                              </button>
+
+                              <button
+                                type="button"
+                                (click)="cancelAirwayBillEdit()"
+                                [disabled]="savingAirwayBillOrderId() === order.id"
+                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          } @else {
+                            <div class="flex items-center gap-2">
+                              @if (order.airwayBillUrl) {
+                                <a
+                                  [href]="order.airwayBillUrl"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="text-blue-600 hover:underline"
+                                >
+                                  Open
+                                </a>
+                              }
+
+                              <button
+                                type="button"
+                                (click)="startAirwayBillEdit(order)"
+                                class="rounded px-2 py-1 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                {{ order.airwayBillUrl ? 'Edit' : 'Add' }}
+                              </button>
+                            </div>
+                          }
                         }
                       </td>
 
                       <td class="whitespace-nowrap px-4 py-3">
                         @if (first) {
                           @if (editingStatusOrderId() === order.id) {
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-col gap-2">
                               <select
                                 [value]="statusEditValue()"
                                 (change)="statusEditValue.set(+$any($event.target).value)"
@@ -771,30 +826,54 @@
                                 <option value="8">New</option>
                               </select>
 
-                              <button
-                                type="button"
-                                (click)="saveStatus(order)"
-                                [disabled]="
-                                  savingStatusOrderId() === order.id ||
-                                  statusEditValue() === order.orderStatus
-                                "
-                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-                              >
-                                @if (savingStatusOrderId() === order.id) {
-                                  Saving...
-                                } @else {
-                                  Save
-                                }
-                              </button>
+                              @if (statusEditValue() === 4 || statusEditValue() === 6) {
+                                <textarea
+                                  rows="2"
+                                  maxlength="1000"
+                                  [value]="cancellationReason()"
+                                  (input)="cancellationReason.set($any($event.target).value)"
+                                  [disabled]="savingStatusOrderId() === order.id"
+                                  placeholder="Cancellation / return reason"
+                                  class="w-72 resize-y rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                                ></textarea>
 
-                              <button
-                                type="button"
-                                (click)="cancelStatusEdit()"
-                                [disabled]="savingStatusOrderId() === order.id"
-                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-                              >
-                                Cancel
-                              </button>
+                                <input
+                                  type="url"
+                                  maxlength="1000"
+                                  [value]="cancellationEvidenceUrl()"
+                                  (input)="cancellationEvidenceUrl.set($any($event.target).value)"
+                                  [disabled]="savingStatusOrderId() === order.id"
+                                  placeholder="Google Drive evidence link"
+                                  class="w-72 rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                                />
+                              }
+
+                              <div class="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  (click)="saveStatus(order)"
+                                  [disabled]="
+                                    savingStatusOrderId() === order.id ||
+                                    statusEditValue() === order.orderStatus
+                                  "
+                                  class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  @if (savingStatusOrderId() === order.id) {
+                                    Saving...
+                                  } @else {
+                                    Save
+                                  }
+                                </button>
+
+                                <button
+                                  type="button"
+                                  (click)="cancelStatusEdit()"
+                                  [disabled]="savingStatusOrderId() === order.id"
+                                  class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
                           } @else {
                             <button

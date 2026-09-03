@@ -45,6 +45,11 @@ public class Order
 
     public bool NeedToShip { get; set; }
 
+    public string? CancellationReturnReason { get; set; }
+
+    public string? CancellationReturnEvidenceUrl { get; set; }
+
+    public string? AirwayBillUrl { get; set; }
     public byte[] RowVersion { get; set; } = [];
 
     public Store Store { get; set; } = null!;

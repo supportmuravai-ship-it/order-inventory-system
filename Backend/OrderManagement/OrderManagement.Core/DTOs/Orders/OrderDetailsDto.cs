@@ -62,6 +62,11 @@ public class OrderDetailsDto
 
     public bool NeedToShip { get; set; }
 
+    public string? AirwayBillUrl { get; set; }
+    public string? CancellationReturnReason { get; set; }
+
+    public string? CancellationReturnEvidenceUrl { get; set; }
+
     public List<OrderStatusHistoryDto> StatusHistory { get; set; } = [];
 
     public List<TrackingHistoryDto> TrackingHistory { get; set; } = [];

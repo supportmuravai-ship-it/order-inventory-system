@@ -40,6 +40,7 @@ public class OrderListItemDto
     public string? TrenvoNote { get; set; }
     public bool NeedsAttention { get; set; }
 
+    public string? AirwayBillUrl { get; set; }
     public double HoursInCurrentStatus { get; set; }
     public List<OrderItemDto> Items { get; set; } = [];
 

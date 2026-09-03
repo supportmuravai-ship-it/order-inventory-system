@@ -49,6 +49,8 @@ export class WorkspaceComponent implements OnInit {
   readonly savingStatusOrderId = signal<number | null>(null);
   readonly statusEditValue = signal<number | null>(null);
   readonly statusUpdateMessage = signal('');
+  readonly cancellationReason = signal('');
+readonly cancellationEvidenceUrl = signal('');
 
   readonly editingTrackingOrderId = signal<number | null>(null);
   readonly savingTrackingOrderId = signal<number | null>(null);
@@ -82,6 +84,10 @@ export class WorkspaceComponent implements OnInit {
 
   readonly needToShipOnly = signal(false);
 readonly savingNeedToShipOrderId = signal<number | null>(null);
+
+  readonly editingAirwayBillOrderId = signal<number | null>(null);
+readonly savingAirwayBillOrderId = signal<number | null>(null);
+readonly airwayBillEditValue = signal('');
 
   readonly summary = signal<OrderSummary>({
     totalOrders: 0,
@@ -366,38 +372,64 @@ showNeedToShip(): void {
   }
 
   startStatusEdit(order: OrderListItem): void {
-    this.editingStatusOrderId.set(order.id);
-    this.statusEditValue.set(order.orderStatus);
-    this.statusUpdateMessage.set('');
-  }
+  this.editingStatusOrderId.set(order.id);
+  this.statusEditValue.set(order.orderStatus);
+  this.cancellationReason.set('');
+  this.cancellationEvidenceUrl.set('');
+  this.statusUpdateMessage.set('');
+}
 
   cancelStatusEdit(): void {
-    this.editingStatusOrderId.set(null);
-    this.statusEditValue.set(null);
-  }
+  this.editingStatusOrderId.set(null);
+  this.statusEditValue.set(null);
+  this.cancellationReason.set('');
+  this.cancellationEvidenceUrl.set('');
+}
 
   saveStatus(order: OrderListItem): void {
-    const store = this.authService.selectedStore();
-    const newStatus = this.statusEditValue();
+  const store = this.authService.selectedStore();
+  const newStatus = this.statusEditValue();
 
-    if (!store || newStatus === null) {
-      return;
-    }
+  if (!store || newStatus === null) {
+    return;
+  }
 
-    if (newStatus === order.orderStatus) {
-      this.cancelStatusEdit();
-      return;
-    }
+  if (newStatus === order.orderStatus) {
+    this.cancelStatusEdit();
+    return;
+  }
 
-    this.savingStatusOrderId.set(order.id);
-    this.errorMessage.set('');
-    this.statusUpdateMessage.set('');
+  const requiresCancellationDetails = newStatus === 4 || newStatus === 6;
 
-    this.ordersService.updateOrderStatus(store.id, order.id, newStatus).subscribe({
+  const reason = this.cancellationReason().trim();
+  const evidenceUrl = this.cancellationEvidenceUrl().trim();
+
+  if (requiresCancellationDetails && !reason) {
+    this.errorMessage.set('Reason is required for Return or Cancelled status.');
+    return;
+  }
+
+  if (requiresCancellationDetails && !evidenceUrl) {
+    this.errorMessage.set('Evidence image link is required for Return or Cancelled status.');
+    return;
+  }
+
+  this.savingStatusOrderId.set(order.id);
+  this.errorMessage.set('');
+  this.statusUpdateMessage.set('');
+
+  this.ordersService
+    .updateOrderStatus(
+      store.id,
+      order.id,
+      newStatus,
+      requiresCancellationDetails ? reason : undefined,
+      requiresCancellationDetails ? evidenceUrl : undefined,
+    )
+    .subscribe({
       next: () => {
         this.savingStatusOrderId.set(null);
-        this.editingStatusOrderId.set(null);
-        this.statusEditValue.set(null);
+        this.cancelStatusEdit();
 
         this.statusUpdateMessage.set(`${order.displayOrderId} status updated successfully.`);
 
@@ -421,7 +453,7 @@ showNeedToShip(): void {
         this.errorMessage.set('Could not update order status.');
       },
     });
-  }
+}
 
   startLocationEdit(order: OrderListItem): void {
     this.editingLocationOrderId.set(order.id);
@@ -911,5 +943,64 @@ showNeedToShip(): void {
 
 canMarkNeedToShip(order: OrderListItem): boolean {
   return order.orderStatus === 0 || order.orderStatus === 8;
+}
+
+startAirwayBillEdit(order: OrderListItem): void {
+  this.editingAirwayBillOrderId.set(order.id);
+  this.airwayBillEditValue.set(order.airwayBillUrl ?? '');
+}
+
+cancelAirwayBillEdit(): void {
+  this.editingAirwayBillOrderId.set(null);
+  this.airwayBillEditValue.set('');
+}
+
+saveAirwayBill(order: OrderListItem): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
+  }
+
+  const value = this.airwayBillEditValue().trim();
+  const airwayBillUrl = value === '' ? null : value;
+
+  if (airwayBillUrl === order.airwayBillUrl) {
+    this.cancelAirwayBillEdit();
+    return;
+  }
+
+  this.savingAirwayBillOrderId.set(order.id);
+  this.errorMessage.set('');
+  this.statusUpdateMessage.set('');
+
+  this.ordersService.updateAirwayBill(store.id, order.id, airwayBillUrl).subscribe({
+    next: () => {
+      this.savingAirwayBillOrderId.set(null);
+      this.cancelAirwayBillEdit();
+
+      this.statusUpdateMessage.set(
+        `${order.displayOrderId} Airway Bill updated successfully.`,
+      );
+
+      this.loadOrders();
+    },
+
+    error: (error: HttpErrorResponse) => {
+      this.savingAirwayBillOrderId.set(null);
+
+      if (error.status === 403) {
+        this.errorMessage.set('You are not allowed to update the Airway Bill.');
+        return;
+      }
+
+      if (typeof error.error === 'string' && error.error.trim()) {
+        this.errorMessage.set(error.error);
+        return;
+      }
+
+      this.errorMessage.set('Could not update Airway Bill.');
+    },
+  });
 }
 }

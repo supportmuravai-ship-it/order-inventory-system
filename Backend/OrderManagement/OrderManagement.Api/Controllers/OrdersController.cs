@@ -257,6 +257,7 @@ public class OrdersController : ControllerBase
                     Currency = x.Currency,
 
                     TrackingNumber = x.TrackingNumber,
+                    AirwayBillUrl = x.AirwayBillUrl,
                     OrderStatus = x.OrderStatus,
                     NeedToShip = x.NeedToShip,
 
@@ -491,6 +492,8 @@ public class OrdersController : ControllerBase
 
                 TrackingNumber = x.TrackingNumber,
 
+                AirwayBillUrl = x.AirwayBillUrl,
+
                 OrderStatus = x.OrderStatus,
 
                 NeedToShip = x.NeedToShip,
@@ -498,6 +501,10 @@ public class OrdersController : ControllerBase
                 LocationLink = x.LocationLink,
 
                 FinalDecision = x.FinalDecision,
+
+                CancellationReturnReason = x.CancellationReturnReason,
+
+                CancellationReturnEvidenceUrl = x.CancellationReturnEvidenceUrl,
 
                 OrderSource = x.OrderSource,
 
@@ -719,6 +726,28 @@ public class OrdersController : ControllerBase
             return NoContent();
         }
 
+        var requiresCancellationDetails =
+    request.OrderStatus == OrderStatus.Cancelled ||
+    request.OrderStatus == OrderStatus.Return;
+
+        if (requiresCancellationDetails)
+        {
+            if (string.IsNullOrWhiteSpace(request.Reason))
+            {
+                return BadRequest("A reason is required when cancelling or returning an order.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.EvidenceUrl))
+            {
+                return BadRequest("An evidence image link is required when cancelling or returning an order.");
+            }
+
+            if (!Uri.TryCreate(request.EvidenceUrl.Trim(), UriKind.Absolute, out var evidenceUri) ||
+                evidenceUri.Scheme != Uri.UriSchemeHttps)
+            {
+                return BadRequest("Evidence link must be a valid HTTPS URL.");
+            }
+        }
         var now = DateTime.UtcNow;
 
         var statusHistory = new OrderStatusHistory
@@ -736,6 +765,12 @@ public class OrdersController : ControllerBase
         _dbContext.OrderStatusHistories.Add(statusHistory);
 
         order.OrderStatus = request.OrderStatus;
+
+        if (requiresCancellationDetails)
+        {
+            order.CancellationReturnReason = request.Reason!.Trim();
+            order.CancellationReturnEvidenceUrl = request.EvidenceUrl!.Trim();
+        }
 
         if (request.OrderStatus != OrderStatus.New &&
             request.OrderStatus != OrderStatus.Confirmed)
@@ -1577,6 +1612,58 @@ public class OrdersController : ControllerBase
         }
 
         order.NeedToShip = request.NeedToShip;
+        order.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPut("{orderId:int}/airway-bill")]
+    [Authorize(Roles = "Admin,WarehouseStaff")]
+    public async Task<IActionResult> UpdateAirwayBill(
+    int storeId,
+    int orderId,
+    UpdateAirwayBillRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        string? airwayBillUrl = null;
+
+        if (!string.IsNullOrWhiteSpace(request.AirwayBillUrl))
+        {
+            airwayBillUrl = request.AirwayBillUrl.Trim();
+
+            if (!Uri.TryCreate(airwayBillUrl, UriKind.Absolute, out var uri) ||
+                uri.Scheme != Uri.UriSchemeHttps)
+            {
+                return BadRequest("Airway Bill link must be a valid HTTPS URL.");
+            }
+        }
+
+        var order = await _dbContext.Orders
+            .SingleOrDefaultAsync(x =>
+                x.StoreId == storeId &&
+                x.Id == orderId);
+
+        if (order is null)
+        {
+            return NotFound();
+        }
+
+        order.AirwayBillUrl = airwayBillUrl;
         order.UpdatedAtUtc = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync();

@@ -37,6 +37,8 @@ export interface OrderListItem {
   hoursInCurrentStatus: number;
   needToShip: boolean;
 
+  airwayBillUrl: string | null;
+
   items: OrderItem[];
 }
 
@@ -98,6 +100,10 @@ export interface OrderDetails {
   statusHistory: OrderStatusHistory[];
   trackingHistory: TrackingHistory[];
 
+  cancellationReturnReason: string | null;
+cancellationReturnEvidenceUrl: string | null;
+
+airwayBillUrl: string | null;
   items: OrderItem[];
 }
 

@@ -158,6 +158,42 @@
                   }
                 </button>
               </div>
+
+              @if (selectedStatus() === 4 || selectedStatus() === 6) {
+                <div class="mt-3 space-y-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-500">
+                      Cancellation / Return Reason
+                    </label>
+
+                    <textarea
+                      rows="3"
+                      maxlength="1000"
+                      [value]="cancellationReason()"
+                      (input)="cancellationReason.set($any($event.target).value)"
+                      [disabled]="savingStatus()"
+                      placeholder="Enter reason..."
+                      class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    ></textarea>
+                  </div>
+
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-500">
+                      Evidence Image Link
+                    </label>
+
+                    <input
+                      type="url"
+                      maxlength="1000"
+                      [value]="cancellationEvidenceUrl()"
+                      (input)="cancellationEvidenceUrl.set($any($event.target).value)"
+                      [disabled]="savingStatus()"
+                      placeholder="https://drive.google.com/..."
+                      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              }
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -330,6 +366,39 @@
           </div>
         </section>
       </div>
+
+      @if (order.cancellationReturnReason || order.cancellationReturnEvidenceUrl) {
+        <section class="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900">Cancellation / Return Details</h2>
+
+          <div class="space-y-4">
+            <div>
+              <p class="text-xs text-gray-500">Reason</p>
+
+              <p class="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+                {{ order.cancellationReturnReason || '—' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500">Evidence</p>
+
+              @if (order.cancellationReturnEvidenceUrl) {
+                <a
+                  [href]="order.cancellationReturnEvidenceUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="mt-1 inline-block text-sm font-medium text-blue-600 hover:underline"
+                >
+                  Open Evidence
+                </a>
+              } @else {
+                <p class="mt-1 text-sm text-gray-400">—</p>
+              }
+            </div>
+          </div>
+        </section>
+      }
 
       <!-- Notes -->
       <div class="mt-5 grid gap-5 lg:grid-cols-2">
@@ -621,19 +690,12 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
     (click)="closeCreateTicket()"
   >
-    <div
-      class="w-full max-w-lg rounded-xl bg-white shadow-xl"
-      (click)="$event.stopPropagation()"
-    >
+    <div class="w-full max-w-lg rounded-xl bg-white shadow-xl" (click)="$event.stopPropagation()">
       <div class="flex items-center justify-between border-b px-6 py-4">
         <div>
-          <h2 class="text-lg font-semibold text-gray-900">
-            Create Ticket
-          </h2>
+          <h2 class="text-lg font-semibold text-gray-900">Create Ticket</h2>
 
-          <p class="mt-1 text-sm text-gray-500">
-            Assign an issue related to this order.
-          </p>
+          <p class="mt-1 text-sm text-gray-500">Assign an issue related to this order.</p>
         </div>
 
         <button
@@ -647,14 +709,10 @@
 
       <div class="space-y-4 p-6">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Assign To
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Assign To </label>
 
           @if (loadingTicketUsers()) {
-            <div class="text-sm text-gray-500">
-              Loading users...
-            </div>
+            <div class="text-sm text-gray-500">Loading users...</div>
           } @else {
             <select
               [(ngModel)]="ticketAssignedToUserId"
@@ -672,9 +730,7 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Title
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Title </label>
 
           <input
             type="text"
@@ -686,9 +742,7 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Message
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Message </label>
 
           <textarea
             [(ngModel)]="ticketMessage"

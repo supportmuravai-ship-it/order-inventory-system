@@ -62,8 +62,8 @@ export class OrdersService {
     }
 
     if (query.needToShip !== undefined) {
-  params = params.set('needToShip', query.needToShip);
-}
+      params = params.set('needToShip', query.needToShip);
+    }
 
     if (query.sort) {
       params = params.set('sort', query.sort);
@@ -84,29 +84,36 @@ export class OrdersService {
     });
   }
 
-  updateOrderStatus(storeId: number, orderId: number, orderStatus: number): Observable<void> {
+  updateOrderStatus(
+    storeId: number,
+    orderId: number,
+    orderStatus: number,
+    reason?: string,
+    evidenceUrl?: string,
+  ): Observable<void> {
     return this.http.put<void>(
       `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/status`,
       {
         orderStatus,
+        reason,
+        evidenceUrl,
       },
       {
         withCredentials: true,
       },
     );
   }
-
   updateNeedToShip(storeId: number, orderId: number, needToShip: boolean): Observable<void> {
-  return this.http.put<void>(
-    `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/need-to-ship`,
-    {
-      needToShip,
-    },
-    {
-      withCredentials: true,
-    },
-  );
-}
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/need-to-ship`,
+      {
+        needToShip,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+  }
 
   updateTrackingNumber(
     storeId: number,
@@ -229,6 +236,22 @@ export class OrdersService {
     return this.http.post<CreateManualOrderResult>(
       `${this.apiUrl}/api/stores/${storeId}/orders`,
       request,
+      {
+        withCredentials: true,
+      },
+    );
+  }
+
+  updateAirwayBill(
+    storeId: number,
+    orderId: number,
+    airwayBillUrl: string | null,
+  ): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/api/stores/${storeId}/orders/${orderId}/airway-bill`,
+      {
+        airwayBillUrl,
+      },
       {
         withCredentials: true,
       },

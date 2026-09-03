@@ -59,6 +59,9 @@ readonly assignableTicketUsers = signal<AssignableTicketUser[]>([]);
 readonly loadingTicketUsers = signal(false);
 readonly creatingTicket = signal(false);
 
+readonly cancellationReason = signal('');
+readonly cancellationEvidenceUrl = signal('');
+
 ticketAssignedToUserId = '';
 ticketTitle = '';
 ticketMessage = '';
@@ -121,25 +124,54 @@ ticketMessage = '';
   }
 
   saveStatus(): void {
-    const store = this.authService.selectedStore();
-    const order = this.order();
-    const status = this.selectedStatus();
+  const store = this.authService.selectedStore();
+  const order = this.order();
+  const status = this.selectedStatus();
 
-    if (!store || !order || status === null) {
-      return;
-    }
+  if (!store || !order || status === null) {
+    return;
+  }
 
-    this.savingStatus.set(true);
-    this.errorMessage.set('');
-    this.successMessage.set('');
+  if (status === order.orderStatus) {
+    return;
+  }
 
-    this.ordersService.updateOrderStatus(store.id, order.id, status).subscribe({
+  const requiresCancellationDetails = status === 4 || status === 6;
+
+  const reason = this.cancellationReason().trim();
+  const evidenceUrl = this.cancellationEvidenceUrl().trim();
+
+  if (requiresCancellationDetails && !reason) {
+    this.errorMessage.set('Reason is required for Return or Cancelled status.');
+    return;
+  }
+
+  if (requiresCancellationDetails && !evidenceUrl) {
+    this.errorMessage.set('Evidence image link is required for Return or Cancelled status.');
+    return;
+  }
+
+  this.savingStatus.set(true);
+  this.errorMessage.set('');
+  this.successMessage.set('');
+
+  this.ordersService
+    .updateOrderStatus(
+      store.id,
+      order.id,
+      status,
+      requiresCancellationDetails ? reason : undefined,
+      requiresCancellationDetails ? evidenceUrl : undefined,
+    )
+    .subscribe({
       next: () => {
-        this.loadOrder();
+        this.cancellationReason.set('');
+        this.cancellationEvidenceUrl.set('');
 
         this.successMessage.set('Order status updated successfully.');
-
         this.savingStatus.set(false);
+
+        this.loadOrder();
       },
 
       error: (error: HttpErrorResponse) => {
@@ -158,7 +190,7 @@ ticketMessage = '';
         this.errorMessage.set('Could not update order status.');
       },
     });
-  }
+}
 
   backToOrders(): void {
     this.router.navigate(['/workspace']);
