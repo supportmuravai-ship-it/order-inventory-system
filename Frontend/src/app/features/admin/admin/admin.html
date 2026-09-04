@@ -1,1 +1,588 @@
-<p>admin works!</p>
+<div class="min-h-screen bg-gray-100">
+  <header class="border-b bg-white">
+    <div class="flex items-center justify-between px-4 py-4 md:px-6">
+      <div>
+        <div class="text-xl font-bold tracking-wide">
+          SQUAD<span class="text-blue-600">21</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="backToOrders()"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        Back to Orders
+      </button>
+    </div>
+  </header>
+
+<div class="min-h-screen bg-gray-100 p-4 md:p-6">
+  <div class="mx-auto max-w-7xl">
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+      <p class="mt-1 text-sm text-gray-500">Global order overview and Shopify store health.</p>
+    </div>
+
+    @if (loading()) {
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <p class="text-sm text-gray-500">Loading Admin Dashboard...</p>
+      </div>
+    } @else if (errorMessage()) {
+      <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+        <p class="text-sm text-red-700">
+          {{ errorMessage() }}
+        </p>
+      </div>
+    } @else {
+      <section>
+        <h2 class="mb-3 text-lg font-semibold text-gray-900">Global Order KPIs</h2>
+
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          <div class="rounded-xl border bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase text-gray-500">Total Orders</p>
+            <p class="mt-2 text-2xl font-bold">{{ kpis().totalOrders }}</p>
+          </div>
+
+          <div class="rounded-xl border border-cyan-200 bg-cyan-50 p-4">
+            <p class="text-xs font-medium uppercase text-cyan-700">New</p>
+            <p class="mt-2 text-2xl font-bold text-cyan-900">{{ kpis().new }}</p>
+          </div>
+
+          <div class="rounded-xl border border-purple-200 bg-purple-50 p-4">
+            <p class="text-xs font-medium uppercase text-purple-700">Confirmed</p>
+            <p class="mt-2 text-2xl font-bold text-purple-900">{{ kpis().confirmed }}</p>
+          </div>
+
+          <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p class="text-xs font-medium uppercase text-blue-700">Shipped</p>
+            <p class="mt-2 text-2xl font-bold text-blue-900">{{ kpis().shipped }}</p>
+          </div>
+
+          <div class="rounded-xl border border-green-200 bg-green-50 p-4">
+            <p class="text-xs font-medium uppercase text-green-700">Delivered</p>
+            <p class="mt-2 text-2xl font-bold text-green-900">{{ kpis().delivered }}</p>
+          </div>
+
+          <div class="rounded-xl border border-gray-300 bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase text-gray-600">Cancelled</p>
+            <p class="mt-2 text-2xl font-bold text-gray-900">{{ kpis().cancelled }}</p>
+          </div>
+
+          <div class="rounded-xl border border-orange-200 bg-orange-50 p-4">
+            <p class="text-xs font-medium uppercase text-orange-700">No Response</p>
+            <p class="mt-2 text-2xl font-bold text-orange-900">{{ kpis().noResponse }}</p>
+          </div>
+
+          <div class="rounded-xl border border-teal-200 bg-teal-50 p-4">
+            <p class="text-xs font-medium uppercase text-teal-700">Returns</p>
+            <p class="mt-2 text-2xl font-bold text-teal-900">{{ kpis().returns }}</p>
+          </div>
+
+          <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+            <p class="text-xs font-medium uppercase text-yellow-700">Return In Process</p>
+            <p class="mt-2 text-2xl font-bold text-yellow-900">
+              {{ kpis().returnInProcess }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-pink-200 bg-pink-50 p-4">
+            <p class="text-xs font-medium uppercase text-pink-700">Repeated Orders</p>
+            <p class="mt-2 text-2xl font-bold text-pink-900">
+              {{ kpis().repeatedOrder }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+            <p class="text-xs font-medium uppercase text-red-700">Needs Attention</p>
+            <p class="mt-2 text-2xl font-bold text-red-900">
+              {{ kpis().needsAttention }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+            <p class="text-xs font-medium uppercase text-indigo-700">Need To Ship</p>
+            <p class="mt-2 text-2xl font-bold text-indigo-900">
+              {{ kpis().needToShip }}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <h2 class="mb-3 text-lg font-semibold text-gray-900">Create Store</h2>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          @if (createStoreMessage()) {
+            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+              <p class="text-sm text-green-700">
+                {{ createStoreMessage() }}
+              </p>
+            </div>
+          }
+
+          @if (createStoreError()) {
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <p class="text-sm text-red-700">
+                {{ createStoreError() }}
+              </p>
+            </div>
+          }
+
+          <div class="grid gap-4 md:grid-cols-3">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Store Name </label>
+
+              <input
+                type="text"
+                [value]="createStoreName()"
+                (input)="createStoreName.set($any($event.target).value)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2"
+                placeholder="Muravai Store"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Store Code </label>
+
+              <input
+                type="text"
+                [value]="createStoreCode()"
+                (input)="createStoreCode.set($any($event.target).value)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2"
+                placeholder="MURAVAI"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Shopify Domain </label>
+
+              <input
+                type="text"
+                [value]="createStoreDomain()"
+                (input)="createStoreDomain.set($any($event.target).value)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2"
+                placeholder="manual-muravai.myshopify.com"
+              />
+
+              <p class="mt-1 text-xs text-gray-500">
+                A unique placeholder domain may be used until Shopify is connected.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <button
+              type="button"
+              (click)="createStore()"
+              [disabled]="creatingStore()"
+              class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              @if (creatingStore()) {
+                Creating...
+              } @else {
+                Create Store
+              }
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <h2 class="mb-3 text-lg font-semibold text-gray-900">Create User</h2>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          @if (createUserMessage()) {
+            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+              <p class="text-sm text-green-700">
+                {{ createUserMessage() }}
+              </p>
+            </div>
+          }
+
+          @if (createUserError()) {
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <p class="text-sm text-red-700">
+                {{ createUserError() }}
+              </p>
+            </div>
+          }
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Name </label>
+
+              <input
+                type="text"
+                [value]="createUserName()"
+                (input)="createUserName.set($any($event.target).value)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2"
+                placeholder="Employee name"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Email </label>
+
+              <input
+                type="email"
+                autocomplete="off"
+                [value]="createUserEmail()"
+                (input)="createUserEmail.set($any($event.target).value)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2"
+                placeholder="employee@example.com"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Password </label>
+
+              <input
+                type="password"
+                autocomplete="new-password"
+                [value]="createUserPassword()"
+                (input)="createUserPassword.set($any($event.target).value)"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2"
+                placeholder="New user password"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Role </label>
+
+              <select
+                [value]="createUserRole()"
+                (change)="createUserRole.set($any($event.target).value)"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
+              >
+                <option value="Admin">Admin</option>
+                <option value="InventoryManager">Inventory Manager</option>
+                <option value="CustomerSupport">Customer Support</option>
+                <option value="WarehouseStaff">Warehouse Staff</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <p class="mb-2 text-sm font-medium text-gray-700">Store Access</p>
+
+            <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              @for (store of shopifyHealth(); track store.storeId) {
+                @if (store.isActive) {
+                  <label
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-3 py-3 hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      [checked]="isUserStoreSelected(store.storeId)"
+                      (change)="toggleUserStore(store.storeId)"
+                    />
+
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">
+                        {{ store.storeName }}
+                      </p>
+
+                      <p class="text-xs text-gray-500">
+                        {{ store.storeCode }}
+                      </p>
+                    </div>
+                  </label>
+                }
+              }
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <button
+              type="button"
+              (click)="createUser()"
+              [disabled]="creatingUser()"
+              class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              @if (creatingUser()) {
+                Creating...
+              } @else {
+                Create User
+              }
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <h2 class="mb-3 text-lg font-semibold text-gray-900">Users</h2>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+          @if (usersLoading()) {
+            <div class="p-5">
+              <p class="text-sm text-gray-500">Loading users...</p>
+            </div>
+          } @else {
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-gray-50 text-xs font-semibold uppercase text-gray-500">
+                <tr>
+                  <th class="px-4 py-3">Name</th>
+                  <th class="px-4 py-3">Email</th>
+                  <th class="px-4 py-3">Role</th>
+                  <th class="px-4 py-3">Store Access</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3">Action</th>
+                </tr>
+              </thead>
+
+              <tbody class="divide-y divide-gray-100">
+                @for (user of users(); track user.id) {
+                  <tr>
+                    <td class="px-4 py-3 font-medium text-gray-900">
+                      {{ user.name }}
+                    </td>
+
+                    <td class="px-4 py-3 text-gray-600">
+                      {{ user.email }}
+                    </td>
+
+                    <td class="px-4 py-3">
+                      @if (editingRoleUserId() === user.id) {
+                        <div class="flex items-center gap-2">
+                          <select
+                            [value]="editingRoleValue()"
+                            (change)="editingRoleValue.set($any($event.target).value)"
+                            class="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm"
+                          >
+                            <option value="Admin">Admin</option>
+                            <option value="InventoryManager">Inventory Manager</option>
+                            <option value="CustomerSupport">Customer Support</option>
+                            <option value="WarehouseStaff">Warehouse Staff</option>
+                          </select>
+
+                          <button
+                            type="button"
+                            (click)="saveUserRole(user)"
+                            [disabled]="savingUserEditId() === user.id"
+                            class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            type="button"
+                            (click)="cancelRoleEdit()"
+                            class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      } @else {
+                        <button
+                          type="button"
+                          (click)="startRoleEdit(user)"
+                          class="rounded px-2 py-1 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          {{ user.roles.join(', ') || 'Add role' }}
+                        </button>
+                      }
+                    </td>
+
+                    <td class="px-4 py-3">
+                      @if (editingStoresUserId() === user.id) {
+                        <div class="min-w-64 space-y-2">
+                          @for (store of shopifyHealth(); track store.storeId) {
+                            @if (store.isActive) {
+                              <label class="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  [checked]="isEditingStoreSelected(store.storeId)"
+                                  (change)="toggleEditingStore(store.storeId)"
+                                />
+
+                                <span>
+                                  {{ store.storeName }}
+                                </span>
+                              </label>
+                            }
+                          }
+
+                          <div class="flex gap-2 pt-1">
+                            <button
+                              type="button"
+                              (click)="saveUserStores(user)"
+                              [disabled]="
+                                savingUserEditId() === user.id || editingStoreIds().length === 0
+                              "
+                              class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+
+                            <button
+                              type="button"
+                              (click)="cancelStoreEdit()"
+                              class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      } @else {
+                        <button
+                          type="button"
+                          (click)="startStoreEdit(user)"
+                          class="rounded px-2 py-1 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          {{ user.stores.join(', ') || 'Add store access' }}
+                        </button>
+                      }
+                    </td>
+
+                    <td class="px-4 py-3">
+                      @if (user.isActive) {
+                        <span
+                          class="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700"
+                        >
+                          Active
+                        </span>
+                      } @else {
+                        <span
+                          class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700"
+                        >
+                          Inactive
+                        </span>
+                      }
+                    </td>
+
+                    <td class="px-4 py-3">
+                      <button
+                        type="button"
+                        (click)="toggleUserActive(user)"
+                        [disabled]="updatingUserId() === user.id"
+                        class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        @if (updatingUserId() === user.id) {
+                          Saving...
+                        } @else if (user.isActive) {
+                          Deactivate
+                        } @else {
+                          Activate
+                        }
+                      </button>
+                    </td>
+                  </tr>
+                }
+
+                @if (users().length === 0) {
+                  <tr>
+                    <td colspan="6" class="px-4 py-8 text-center text-gray-500">No users found.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <h2 class="mb-3 text-lg font-semibold text-gray-900">Shopify Health</h2>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+          <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-50 text-xs font-semibold uppercase text-gray-500">
+              <tr>
+                <th class="px-4 py-3">Store</th>
+                <th class="px-4 py-3">Shop Domain</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Last Successful Sync</th>
+                <th class="px-4 py-3">Last Reconciliation</th>
+                <th class="px-4 py-3">Last Webhook</th>
+                <th class="px-4 py-3">Last Error</th>
+                <th class="px-4 py-3">Action</th>
+              </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100">
+              @for (store of shopifyHealth(); track store.storeId) {
+                <tr>
+                  <td class="px-4 py-3 font-medium text-gray-900">
+                    {{ store.storeName }}
+                  </td>
+
+                  <td class="px-4 py-3 text-gray-600">
+                    {{ store.shopDomain || '—' }}
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <span
+                      class="rounded-full px-2.5 py-1 text-xs font-medium"
+                      [ngClass]="getConnectionClasses(store.connectionStatus)"
+                    >
+                      {{ store.connectionStatus }}
+                    </span>
+                  </td>
+
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                    @if (store.lastSuccessfulSyncAtUtc) {
+                      {{ store.lastSuccessfulSyncAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                    } @else {
+                      —
+                    }
+                  </td>
+
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                    @if (store.lastReconciliationAtUtc) {
+                      {{ store.lastReconciliationAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                    } @else {
+                      —
+                    }
+                  </td>
+
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                    @if (store.lastWebhookReceivedAtUtc) {
+                      {{ store.lastWebhookReceivedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                    } @else {
+                      —
+                    }
+                  </td>
+
+                  <td class="max-w-80 px-4 py-3">
+                    @if (store.lastShopifyError) {
+                      <span class="text-red-600">
+                        {{ store.lastShopifyError }}
+                      </span>
+                    } @else {
+                      <span class="text-green-600">No errors</span>
+                    }
+                  </td>
+
+                  <td class="px-4 py-3">
+                    @if (store.connectionStatus === 'Connected') {
+                      <button
+                        type="button"
+                        (click)="syncStore(store.storeId)"
+                        [disabled]="syncingStoreId() === store.storeId"
+                        class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        @if (syncingStoreId() === store.storeId) {
+                          Syncing...
+                        } @else {
+                          Sync Now
+                        }
+                      </button>
+                    } @else {
+                      <span class="text-xs text-gray-400"> — </span>
+                    }
+                  </td>
+                </tr>
+              }
+
+              @if (shopifyHealth().length === 0) {
+                <tr>
+                  <td colspan="7" class="px-4 py-8 text-center text-gray-500">No stores found.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  </div>
+</div>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,13 +11,15 @@ public class ShopifyReconciliationBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ShopifyReconciliationBackgroundService> _logger;
-
+    private readonly IConfiguration _configuration;
     public ShopifyReconciliationBackgroundService(
-        IServiceScopeFactory scopeFactory,
-        ILogger<ShopifyReconciliationBackgroundService> logger)
+     IServiceScopeFactory scopeFactory,
+     ILogger<ShopifyReconciliationBackgroundService> logger,
+     IConfiguration configuration)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _configuration = configuration;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -50,6 +53,10 @@ public class ShopifyReconciliationBackgroundService : BackgroundService
         var stores = await dbContext.Stores
             .Where(x => x.IsActive && x.ShopDomain != null)
             .ToListAsync(cancellationToken);
+
+        stores = stores
+                    .Where(IsShopifyConnected)
+                    .ToList();
 
         foreach (var store in stores)
         {
@@ -89,5 +96,29 @@ public class ShopifyReconciliationBackgroundService : BackgroundService
                 _logger.LogError(ex, "Shopify reconciliation failed for Store {StoreId}.", store.Id);
             }
         }
+    }
+
+    private bool IsShopifyConnected(Core.Entities.Store store)
+    {
+        var hasOAuthConnection =
+            !string.IsNullOrWhiteSpace(store.ShopifyAccessTokenEncrypted) &&
+            !string.IsNullOrWhiteSpace(store.ShopifyRefreshTokenEncrypted);
+
+        if (hasOAuthConnection)
+        {
+            return true;
+        }
+
+        var legacyClientId =
+            _configuration[$"Shopify:Stores:{store.Id}:ClientId"];
+
+        var legacyClientSecret =
+            _configuration[$"Shopify:Stores:{store.Id}:ClientSecret"];
+
+        var hasLegacyConnection =
+            !string.IsNullOrWhiteSpace(legacyClientId) &&
+            !string.IsNullOrWhiteSpace(legacyClientSecret);
+
+        return hasLegacyConnection;
     }
 }

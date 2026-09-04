@@ -65,13 +65,15 @@
       <div class="mb-6 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white">Orders</div>
 
       <div class="space-y-2">
-        <button
-          type="button"
-          (click)="closeMobileMenu()"
-          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-        >
-          Dashboard
-        </button>
+        @if (isAdmin()) {
+          <button
+            type="button"
+            (click)="openAdminDashboard()"
+            class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+          >
+            Admin Dashboard
+          </button>
+        }
 
         <button
           type="button"
@@ -97,13 +99,13 @@
           }
         </button>
 
-        <button
+        <!-- <button
           type="button"
           (click)="closeMobileMenu()"
           class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-400 hover:bg-slate-800 hover:text-white"
         >
           Returns
-        </button>
+        </button> -->
 
         <button
           type="button"
@@ -130,7 +132,15 @@
       <div class="mb-6 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white">Orders</div>
 
       <div class="space-y-2">
-        <div class="rounded-lg px-4 py-3 text-sm text-gray-300">Dashboard</div>
+        @if (isAdmin()) {
+          <button
+            type="button"
+            (click)="openAdminDashboard()"
+            class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+          >
+            Admin Dashboard
+          </button>
+        }
 
         <div class="rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white">
           All Orders
@@ -152,7 +162,7 @@
           }
         </button>
 
-        <div class="rounded-lg px-4 py-3 text-sm text-gray-400">Returns</div>
+        <!-- <div class="rounded-lg px-4 py-3 text-sm text-gray-400">Returns</div> -->
 
         <button
           type="button"
