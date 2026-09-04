@@ -5,6 +5,12 @@
         <div class="text-xl font-bold tracking-wide">
           SQUAD<span class="text-blue-600">21</span>
         </div>
+          <div class="hidden text-lg font-semibold text-gray-900 md:block">
+  Order Management
+  <span class="text-blue-600">
+    - {{ authService.selectedStore()?.name }}
+  </span>
+</div>
 
         <div class="mt-1 text-sm text-gray-500">Add Manual Order</div>
       </div>

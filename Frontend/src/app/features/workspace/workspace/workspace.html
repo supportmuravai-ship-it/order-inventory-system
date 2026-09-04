@@ -16,7 +16,10 @@
           SQUAD<span class="text-blue-600">21</span>
         </div>
 
-        <div class="hidden text-lg font-semibold text-gray-900 md:block">Order Management</div>
+        <div class="hidden text-lg font-semibold text-gray-900 md:block">
+          Order Management
+          <span class="text-blue-600"> - {{ authService.selectedStore()?.name }} </span>
+        </div>
       </div>
 
       <div class="flex items-center gap-3">
@@ -1036,7 +1039,8 @@
                             <button
                               type="button"
                               (click)="startFinalDecisionEdit(order)"
-                              class="rounded px-2 py-1 text-left hover:bg-blue-50 hover:text-blue-600"
+                              class="block max-w-40 truncate rounded px-2 py-1 text-left hover:bg-blue-50 hover:text-blue-600"
+                              [title]="order.finalDecision || 'Add decision'"
                             >
                               {{ order.finalDecision || 'Add decision' }}
                             </button>
@@ -1116,7 +1120,7 @@
                               title="Click to edit Customer Support note"
                             >
                               @if (order.shoaibNote) {
-                                <span class="block whitespace-normal">
+                                <span class="block max-w-40 truncate" [title]="order.shoaibNote">
                                   {{ order.shoaibNote }}
                                 </span>
                               } @else {
@@ -1187,7 +1191,7 @@
                               title="Click to edit Warehouse Staff note"
                             >
                               @if (order.trenvoNote) {
-                                <span class="block whitespace-normal">
+                                <span class="block max-w-40 truncate" [title]="order.trenvoNote">
                                   {{ order.trenvoNote }}
                                 </span>
                               } @else {
