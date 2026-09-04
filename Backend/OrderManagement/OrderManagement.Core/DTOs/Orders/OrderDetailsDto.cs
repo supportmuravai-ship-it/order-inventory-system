@@ -67,6 +67,10 @@ public class OrderDetailsDto
 
     public string? CancellationReturnEvidenceUrl { get; set; }
 
+    public List<OrderNoteHistoryDto> ShoaibNoteHistory { get; set; } = [];
+
+    public List<OrderNoteHistoryDto> TrenvoNoteHistory { get; set; } = [];
+
     public List<OrderStatusHistoryDto> StatusHistory { get; set; } = [];
 
     public List<TrackingHistoryDto> TrackingHistory { get; set; } = [];

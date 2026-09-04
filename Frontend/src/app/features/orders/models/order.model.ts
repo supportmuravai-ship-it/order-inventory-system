@@ -85,10 +85,12 @@ export interface OrderDetails {
   shoaibNote: string | null;
   shoaibNoteUpdatedAtUtc: string | null;
   shoaibNoteUpdatedBy: string | null;
+  shoaibNoteHistory: OrderNoteHistory[];
 
   trenvoNote: string | null;
   trenvoNoteUpdatedAtUtc: string | null;
   trenvoNoteUpdatedBy: string | null;
+  trenvoNoteHistory: OrderNoteHistory[];
 
   warehouseName: string | null;
   lastStatusChangedAtUtc: string;
@@ -105,6 +107,7 @@ cancellationReturnEvidenceUrl: string | null;
 
 airwayBillUrl: string | null;
   items: OrderItem[];
+
 }
 
 export interface PagedResult<T> {
@@ -189,4 +192,13 @@ export interface CreateManualOrderRequest {
 export interface CreateManualOrderResult {
   id: number;
   displayOrderId: string;
+}
+
+export interface OrderNoteHistory {
+  noteType: number;
+  oldText: string | null;
+  newText: string | null;
+  changedByUserId: string;
+  changedBy: string;
+  changedAtUtc: string;
 }

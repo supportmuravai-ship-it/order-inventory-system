@@ -463,6 +463,7 @@ public class OrdersController : ControllerBase
 
         var order = await _dbContext.Orders
             .AsNoTracking()
+            .AsSplitQuery()
             .Where(x =>
                 x.StoreId == storeId &&
                 x.Id == orderId)
@@ -537,7 +538,27 @@ public class OrdersController : ControllerBase
                         note.UpdatedByUserId)
                     .FirstOrDefault(),
 
-                 TrenvoNote = x.Notes
+                ShoaibNoteHistory = x.NoteHistory
+                    .Where(history => history.NoteType == NoteType.Shoaib)
+                    .OrderByDescending(history => history.ChangedAtUtc)
+                    .Select(history => new OrderNoteHistoryDto
+                    {
+                        NoteType = history.NoteType,
+                        OldText = history.OldText,
+                        NewText = history.NewText,
+                        ChangedByUserId = history.ChangedByUserId,
+
+                        ChangedBy = _dbContext.Users
+                            .Where(user => user.Id == history.ChangedByUserId)
+                            .Select(user => user.Email ?? user.UserName ?? user.Id)
+                            .FirstOrDefault() ?? history.ChangedByUserId,
+
+                        ChangedAtUtc = history.ChangedAtUtc
+                    })
+                    .ToList(),
+
+
+                TrenvoNote = x.Notes
                     .Where(note =>
                         note.NoteType == NoteType.Trenvo)
                     .Select(note => note.Text)
@@ -563,6 +584,25 @@ public class OrdersController : ControllerBase
                             .FirstOrDefault() ??
                         note.UpdatedByUserId)
                     .FirstOrDefault(),
+
+                TrenvoNoteHistory = x.NoteHistory
+                    .Where(history => history.NoteType == NoteType.Trenvo)
+                    .OrderByDescending(history => history.ChangedAtUtc)
+                    .Select(history => new OrderNoteHistoryDto
+                    {
+                        NoteType = history.NoteType,
+                        OldText = history.OldText,
+                        NewText = history.NewText,
+                        ChangedByUserId = history.ChangedByUserId,
+
+                        ChangedBy = _dbContext.Users
+                            .Where(user => user.Id == history.ChangedByUserId)
+                            .Select(user => user.Email ?? user.UserName ?? user.Id)
+                            .FirstOrDefault() ?? history.ChangedByUserId,
+
+                        ChangedAtUtc = history.ChangedAtUtc
+                    })
+                    .ToList(),
 
                 WarehouseName = x.WarehouseLocation != null
                     ? x.WarehouseLocation.Name
@@ -637,6 +677,20 @@ public class OrdersController : ControllerBase
         }
 
         foreach (var history in order.TrackingHistory)
+        {
+            history.ChangedAtUtc = DateTime.SpecifyKind(
+                history.ChangedAtUtc,
+                DateTimeKind.Utc);
+        }
+
+        foreach (var history in order.ShoaibNoteHistory)
+        {
+            history.ChangedAtUtc = DateTime.SpecifyKind(
+                history.ChangedAtUtc,
+                DateTimeKind.Utc);
+        }
+
+        foreach (var history in order.TrenvoNoteHistory)
         {
             history.ChangedAtUtc = DateTime.SpecifyKind(
                 history.ChangedAtUtc,
@@ -1063,40 +1117,31 @@ public class OrdersController : ControllerBase
     int orderId,
     UpdateOrderNoteRequest request)
     {
-        var userId = User.FindFirstValue(
-            ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
         }
 
-        var hasAccess =
-            await _storeAccessService.HasAccessAsync(
-                userId,
-                storeId);
+        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
 
         if (!hasAccess)
         {
             return Forbid();
         }
 
-        var noteText =
-            string.IsNullOrWhiteSpace(request.Text)
-                ? null
-                : request.Text.Trim();
+        var noteText = string.IsNullOrWhiteSpace(request.Text)
+            ? null
+            : request.Text.Trim();
 
-        if (noteText is not null &&
-            noteText.Length > 2000)
+        if (noteText is not null && noteText.Length > 2000)
         {
-            return BadRequest(
-                "Shoaib's Note cannot exceed 2000 characters.");
+            return BadRequest("Shoaib's Note cannot exceed 2000 characters.");
         }
 
         var orderExists = await _dbContext.Orders
-            .AnyAsync(x =>
-                x.StoreId == storeId &&
-                x.Id == orderId);
+            .AnyAsync(x => x.StoreId == storeId && x.Id == orderId);
 
         if (!orderExists)
         {
@@ -1108,26 +1153,35 @@ public class OrdersController : ControllerBase
                 x.OrderId == orderId &&
                 x.NoteType == NoteType.Shoaib);
 
-        /*
-          Blank value means clear the current note.
-         */
-        if (noteText is null)
+        if (existingNote is null && noteText is null)
         {
-            if (existingNote is null)
-            {
-                return NoContent();
-            }
+            return NoContent();
+        }
 
-            _dbContext.OrderNotes.Remove(existingNote);
-
-            await _dbContext.SaveChangesAsync();
-
+        if (existingNote is not null && existingNote.Text == noteText)
+        {
             return NoContent();
         }
 
         var now = DateTime.UtcNow;
 
-        if (existingNote is null)
+        var history = new OrderNoteHistory
+        {
+            OrderId = orderId,
+            NoteType = NoteType.Shoaib,
+            OldText = existingNote?.Text,
+            NewText = noteText,
+            ChangedByUserId = userId,
+            ChangedAtUtc = now
+        };
+
+        _dbContext.OrderNoteHistories.Add(history);
+
+        if (noteText is null)
+        {
+            _dbContext.OrderNotes.Remove(existingNote!);
+        }
+        else if (existingNote is null)
         {
             var note = new OrderNote
             {
@@ -1144,11 +1198,6 @@ public class OrdersController : ControllerBase
         }
         else
         {
-            if (existingNote.Text == noteText)
-            {
-                return NoContent();
-            }
-
             existingNote.Text = noteText;
             existingNote.UpdatedByUserId = userId;
             existingNote.UpdatedAtUtc = now;
@@ -1166,40 +1215,31 @@ public class OrdersController : ControllerBase
     int orderId,
     UpdateOrderNoteRequest request)
     {
-        var userId = User.FindFirstValue(
-            ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
         }
 
-        var hasAccess =
-            await _storeAccessService.HasAccessAsync(
-                userId,
-                storeId);
+        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
 
         if (!hasAccess)
         {
             return Forbid();
         }
 
-        var noteText =
-            string.IsNullOrWhiteSpace(request.Text)
-                ? null
-                : request.Text.Trim();
+        var noteText = string.IsNullOrWhiteSpace(request.Text)
+            ? null
+            : request.Text.Trim();
 
-        if (noteText is not null &&
-            noteText.Length > 2000)
+        if (noteText is not null && noteText.Length > 2000)
         {
-            return BadRequest(
-                "Trenvo Note cannot exceed 2000 characters.");
+            return BadRequest("Trenvo Note cannot exceed 2000 characters.");
         }
 
         var orderExists = await _dbContext.Orders
-            .AnyAsync(x =>
-                x.StoreId == storeId &&
-                x.Id == orderId);
+            .AnyAsync(x => x.StoreId == storeId && x.Id == orderId);
 
         if (!orderExists)
         {
@@ -1211,23 +1251,35 @@ public class OrdersController : ControllerBase
                 x.OrderId == orderId &&
                 x.NoteType == NoteType.Trenvo);
 
-        if (noteText is null)
+        if (existingNote is null && noteText is null)
         {
-            if (existingNote is null)
-            {
-                return NoContent();
-            }
+            return NoContent();
+        }
 
-            _dbContext.OrderNotes.Remove(existingNote);
-
-            await _dbContext.SaveChangesAsync();
-
+        if (existingNote is not null && existingNote.Text == noteText)
+        {
             return NoContent();
         }
 
         var now = DateTime.UtcNow;
 
-        if (existingNote is null)
+        var history = new OrderNoteHistory
+        {
+            OrderId = orderId,
+            NoteType = NoteType.Trenvo,
+            OldText = existingNote?.Text,
+            NewText = noteText,
+            ChangedByUserId = userId,
+            ChangedAtUtc = now
+        };
+
+        _dbContext.OrderNoteHistories.Add(history);
+
+        if (noteText is null)
+        {
+            _dbContext.OrderNotes.Remove(existingNote!);
+        }
+        else if (existingNote is null)
         {
             var note = new OrderNote
             {
@@ -1244,11 +1296,6 @@ public class OrdersController : ControllerBase
         }
         else
         {
-            if (existingNote.Text == noteText)
-            {
-                return NoContent();
-            }
-
             existingNote.Text = noteText;
             existingNote.UpdatedByUserId = userId;
             existingNote.UpdatedAtUtc = now;

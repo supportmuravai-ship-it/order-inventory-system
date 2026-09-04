@@ -35,6 +35,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     => Set<TrackingHistory>();
 
     public DbSet<OrderNote> OrderNotes => Set<OrderNote>();
+
+    public DbSet<OrderNoteHistory> OrderNoteHistories => Set<OrderNoteHistory>();
     public DbSet<OrderTicket> OrderTickets => Set<OrderTicket>();
 
     // ApplicationUser is not written as a DbSet<ApplicationUser> because AppDbContext inherits from: IdentityDbContext<ApplicationUser>. It already adds the users table internally
@@ -53,6 +55,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureTrackingHistory(builder);
         ConfigureOrderNotes(builder);
         ConfigureOrderTicket(builder);
+        ConfigureOrderNoteHistory(builder);
     }
 
     private static void ConfigureStore(ModelBuilder builder)
@@ -436,6 +439,44 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         {
             x.AssignedToUserId,
             x.Status
+        });
+    }
+
+    private static void ConfigureOrderNoteHistory(ModelBuilder builder)
+    {
+        builder.Entity<OrderNoteHistory>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.NoteType)
+                .IsRequired();
+
+            entity.Property(x => x.OldText)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.NewText)
+                .HasMaxLength(2000);
+
+            entity.Property(x => x.ChangedByUserId)
+                .HasMaxLength(450)
+                .IsRequired();
+
+            entity.Property(x => x.ChangedAtUtc)
+                .IsRequired();
+
+            entity.HasOne(x => x.Order)
+                .WithMany(x => x.NoteHistory)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.OrderId);
+
+            entity.HasIndex(x => new
+            {
+                x.OrderId,
+                x.NoteType,
+                x.ChangedAtUtc
+            });
         });
     }
 }
