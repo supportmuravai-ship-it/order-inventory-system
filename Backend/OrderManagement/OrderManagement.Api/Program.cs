@@ -135,6 +135,29 @@ if (app.Environment.IsDevelopment())
         roleManager);
 }
 
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider
+        .GetRequiredService<RoleManager<IdentityRole>>();
+
+    var roles = new[]
+    {
+        "Admin",
+        "InventoryManager",
+        "CustomerSupport",
+        "WarehouseStaff"
+    };
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(
+                new IdentityRole(role));
+        }
+    }
+}
+
 app.UseRateLimiter();
 
 
