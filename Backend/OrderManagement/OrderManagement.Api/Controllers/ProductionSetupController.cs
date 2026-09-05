@@ -22,53 +22,92 @@ public class ProductionSetupController : ControllerBase
     [HttpPost("create-admin")]
     public async Task<IActionResult> CreateAdmin()
     {
-        var email = Environment.GetEnvironmentVariable("SETUP_ADMIN_EMAIL");
-        var password = Environment.GetEnvironmentVariable("SETUP_ADMIN_PASSWORD");
-
-        if (string.IsNullOrWhiteSpace(email) ||
-            string.IsNullOrWhiteSpace(password))
+        try
         {
-            return BadRequest("Admin setup variables are missing.");
-        }
+            var email = Environment.GetEnvironmentVariable("SETUP_ADMIN_EMAIL");
+            var password = Environment.GetEnvironmentVariable("SETUP_ADMIN_PASSWORD");
 
-        if (!await _roleManager.RoleExistsAsync("Admin"))
-        {
-            await _roleManager.CreateAsync(
-                new IdentityRole("Admin"));
-        }
-
-        var user = await _userManager.FindByEmailAsync(email);
-
-        if (user == null)
-        {
-            user = new ApplicationUser
+            if (string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(password))
             {
-                Name = "Production Admin",
-                UserName = email,
-                Email = email,
-                EmailConfirmed = true,
-                IsActive = true
-            };
-
-            var result = await _userManager.CreateAsync(
-                user,
-                password);
-
-            if (!result.Succeeded)
-            {
-                return BadRequest(result.Errors);
+                return BadRequest(new
+                {
+                    error = "Admin setup variables are missing."
+                });
             }
-        }
 
-        if (!await _userManager.IsInRoleAsync(user, "Admin"))
-        {
-            await _userManager.AddToRoleAsync(user, "Admin");
-        }
+            if (!await _roleManager.RoleExistsAsync("Admin"))
+            {
+                var roleResult = await _roleManager.CreateAsync(
+                    new IdentityRole("Admin"));
 
-        return Ok(new
+                if (!roleResult.Succeeded)
+                {
+                    return BadRequest(new
+                    {
+                        error = "Failed to create Admin role.",
+                        details = roleResult.Errors
+                    });
+                }
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                user = new ApplicationUser
+                {
+                    Name = "Production Admin",
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true,
+                    IsActive = true
+                };
+
+                var createResult = await _userManager.CreateAsync(
+                    user,
+                    password);
+
+                if (!createResult.Succeeded)
+                {
+                    return BadRequest(new
+                    {
+                        error = "Failed to create user.",
+                        details = createResult.Errors
+                    });
+                }
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                var roleResult = await _userManager.AddToRoleAsync(
+                    user,
+                    "Admin");
+
+                if (!roleResult.Succeeded)
+                {
+                    return BadRequest(new
+                    {
+                        error = "Failed to assign Admin role.",
+                        details = roleResult.Errors
+                    });
+                }
+            }
+
+            return Ok(new
+            {
+                message = "Admin created successfully",
+                email = user.Email
+            });
+        }
+        catch (Exception ex)
         {
-            message = "Admin created successfully",
-            email
-        });
+            return BadRequest(new
+            {
+                error = ex.Message,
+                inner = ex.InnerException?.Message,
+                stack = ex.StackTrace
+            });
+        }
     }
 }
