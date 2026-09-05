@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.22.3'
+          node-version: '22'
 
       - name: Build Angular
         run: |
@@ -39,11 +39,10 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "./Frontend" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist/order-management-ui/browser" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+          app_location: "./Frontend/dist/order-management-ui/browser"
+          output_location: ""
           skip_app_build: true
+          ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
