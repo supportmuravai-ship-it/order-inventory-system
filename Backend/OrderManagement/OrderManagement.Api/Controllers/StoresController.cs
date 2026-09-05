@@ -16,7 +16,6 @@ using System.Security.Cryptography;
 using System.Text;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Net.WebRequestMethods;
-using System.Text;
 namespace OrderManagement.Api.Controllers;
 
 [ApiController]
@@ -82,32 +81,6 @@ public class StoresController : ControllerBase
             .ToListAsync();
 
         return Ok(stores);
-    }
-
-    [HttpGet("{storeId:int}/access-test")]
-    public async Task<IActionResult> AccessTest(int storeId)
-    {
-        var userId = _userManager.GetUserId(User);
-
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized();
-        }
-
-        var hasAccess = await _storeAccessService.HasAccessAsync(
-            userId,
-            storeId);
-
-        if (!hasAccess)
-        {
-            return Forbid();
-        }
-
-        return Ok(new
-        {
-            message = "You have access to this store.",
-            storeId
-        });
     }
 
     [HttpPost("{storeId:int}/shopify/sync")]

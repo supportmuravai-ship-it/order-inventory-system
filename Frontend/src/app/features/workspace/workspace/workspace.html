@@ -230,8 +230,8 @@
                 </p>
               </div>
 
-              <div class="rounded-xl border border-green-200 bg-green-50 p-4">
-                <p class="text-xs font-medium uppercase text-green-700">Delivered</p>
+              <div class="rounded-xl border p-4" style="background-color: #99f797">
+                <p class="text-xs font-medium uppercase text-green-800">Delivered</p>
 
                 <p class="mt-2 text-2xl font-bold text-green-900">
                   {{ summary().delivered }}
@@ -592,8 +592,6 @@
 
                   <th class="whitespace-nowrap px-4 py-3">Order Source</th>
 
-                  <th class="whitespace-nowrap px-4 py-3">Tag</th>
-
                   <th class="whitespace-nowrap px-4 py-3">Customer Support Notes</th>
 
                   <th class="whitespace-nowrap px-4 py-3">Warehouse Staff Notes</th>
@@ -605,7 +603,7 @@
               <tbody class="divide-y divide-gray-100">
                 @if (orders().length === 0) {
                   <tr>
-                    <td colspan="23" class="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colspan="22" class="px-6 py-12 text-center text-sm text-gray-500">
                       No orders found for the current search or filters.
                     </td>
                   </tr>
@@ -613,7 +611,10 @@
 
                 @for (order of orders(); track order.id) {
                   @for (item of order.items; track item.id; let first = $first) {
-                    <tr [ngClass]="getOrderRowClasses(order)">
+                    <tr
+                      [ngClass]="getOrderRowClasses(order)"
+                      [style.background-color]="order.orderStatus === 2 ? '#74f571' : null"
+                    >
                       <td class="whitespace-nowrap px-4 py-3 text-gray-600">
                         @if (first) {
                           {{ order.orderDateUtc | date: 'dd MMM yyyy' }}
@@ -1051,12 +1052,6 @@
                       <td class="whitespace-nowrap px-4 py-3 text-gray-600">
                         @if (first) {
                           {{ getSourceName(order.orderSource) }}
-                        }
-                      </td>
-
-                      <td class="whitespace-nowrap px-4 py-3 text-gray-400">
-                        @if (first) {
-                          —
                         }
                       </td>
 

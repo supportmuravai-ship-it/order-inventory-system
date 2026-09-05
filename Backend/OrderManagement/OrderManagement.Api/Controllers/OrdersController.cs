@@ -977,7 +977,7 @@ public class OrdersController : ControllerBase
 
 
     [HttpPut("{orderId:int}/location-link")]
-    [Authorize(Roles = "Admin,CustomerSupport")]
+    [Authorize(Roles = "Admin,CustomerSupport,WarehouseStaff")]
     public async Task<IActionResult> UpdateLocationLink(
     int storeId,
     int orderId,

@@ -7,6 +7,11 @@
         </div>
       </div>
 
+      <div class="hidden text-lg font-semibold text-gray-900 md:block">
+          Order Management
+          <span class="text-blue-600"> - {{ authService.selectedStore()?.name }} </span>
+        </div>
+
       <button
         type="button"
         (click)="backToOrders()"

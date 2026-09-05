@@ -20,7 +20,7 @@ import { TicketService } from '../ticket.service';
 })
 export class TicketsPageComponent implements OnInit {
   private readonly ticketService = inject(TicketService);
-  private readonly authService = inject(AuthService);
+  readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly TicketStatus = TicketStatus;

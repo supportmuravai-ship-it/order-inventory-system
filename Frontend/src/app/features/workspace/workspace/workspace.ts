@@ -178,6 +178,12 @@ export class WorkspaceComponent implements OnInit {
       });
   }
 
+  private updateOrderInList(updatedOrder: Partial<OrderListItem> & { id: number }): void {
+    this.orders.update((orders) =>
+      orders.map((order) => (order.id === updatedOrder.id ? { ...order, ...updatedOrder } : order)),
+    );
+  }
+
   startTrackingEdit(order: OrderListItem): void {
     this.editingTrackingOrderId.set(order.id);
     this.trackingEditValue.set(order.trackingNumber ?? '');
@@ -218,8 +224,10 @@ export class WorkspaceComponent implements OnInit {
           `${order.displayOrderId} tracking number updated successfully.`,
         );
 
-        // Reload actual SQL/backend data.
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          trackingNumber,
+        });
       },
 
       error: (error: HttpErrorResponse) => {
@@ -433,7 +441,24 @@ export class WorkspaceComponent implements OnInit {
 
           this.statusUpdateMessage.set(`${order.displayOrderId} status updated successfully.`);
 
-          this.loadOrders();
+          this.updateOrderInList({
+            id: order.id,
+            orderStatus: newStatus,
+
+            needsAttention: false,
+
+            hoursInCurrentStatus: 0,
+
+            needToShip:
+              newStatus === 1 ||
+              newStatus === 2 ||
+              newStatus === 4 ||
+              newStatus === 5 ||
+              newStatus === 6
+                ? false
+                : order.needToShip,
+          });
+
           this.loadSummary();
         },
 
@@ -493,7 +518,10 @@ export class WorkspaceComponent implements OnInit {
 
         this.statusUpdateMessage.set(`${order.displayOrderId} location link updated successfully.`);
 
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          locationLink,
+        });
       },
 
       error: (error: HttpErrorResponse) => {
@@ -554,7 +582,10 @@ export class WorkspaceComponent implements OnInit {
           `${order.displayOrderId} final decision updated successfully.`,
         );
 
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          finalDecision,
+        });
       },
 
       error: (error: HttpErrorResponse) => {
@@ -641,7 +672,10 @@ export class WorkspaceComponent implements OnInit {
           `${order.displayOrderId} invoice status updated successfully.`,
         );
 
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          invoiceStatus: newStatus,
+        });
       },
 
       error: (error: HttpErrorResponse) => {
@@ -761,7 +795,10 @@ export class WorkspaceComponent implements OnInit {
           `${order.displayOrderId} Customer Support note updated successfully.`,
         );
 
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          shoaibNote: text,
+        });
       },
 
       error: (error: HttpErrorResponse) => {
@@ -822,7 +859,10 @@ export class WorkspaceComponent implements OnInit {
           `${order.displayOrderId} Warehouse staff Note updated successfully.`,
         );
 
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          trenvoNote: text,
+        });
       },
 
       error: (error: HttpErrorResponse) => {
@@ -865,7 +905,7 @@ export class WorkspaceComponent implements OnInit {
     const classes: Record<number, string> = {
       0: 'bg-purple-50 hover:bg-purple-100', // Confirmed
       1: 'bg-blue-50 hover:bg-blue-100', // Shipped
-      2: 'bg-green-50 hover:bg-green-100', // Delivered
+      2: 'hover:bg-green-200', // Delivered
       3: 'bg-orange-50 hover:bg-orange-100', // No Response
       4: 'bg-teal-50 hover:bg-teal-100', // Return
       5: 'bg-yellow-50 hover:bg-yellow-100', // Return In Process
@@ -919,7 +959,11 @@ export class WorkspaceComponent implements OnInit {
             : `${order.displayOrderId} removed from Need to Ship.`,
         );
 
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          needToShip,
+        });
+
         this.loadSummary();
       },
 
@@ -981,7 +1025,10 @@ export class WorkspaceComponent implements OnInit {
 
         this.statusUpdateMessage.set(`${order.displayOrderId} Airway Bill updated successfully.`);
 
-        this.loadOrders();
+        this.updateOrderInList({
+          id: order.id,
+          airwayBillUrl,
+        });
       },
 
       error: (error: HttpErrorResponse) => {
