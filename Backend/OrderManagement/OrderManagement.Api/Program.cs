@@ -93,7 +93,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "http://localhost:4200",
-            "https://your-static-web-app-url.azurestaticapps.net"
+            "https://proud-wave-0427d0400.3.azurestaticapps.net"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
