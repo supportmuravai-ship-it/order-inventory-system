@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using OrderManagement.Core.DTOs.Auth;
 using OrderManagement.Core.Entities;
 
 namespace OrderManagement.Api.Controllers;
 
+[EnableRateLimiting("login")]
 [ApiController]
 [Route("api/auth")]
 public class AuthController : ControllerBase

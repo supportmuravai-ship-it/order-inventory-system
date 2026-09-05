@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using OrderManagement.Core.Entities;
+using OrderManagement.Core.Interfaces;
 using OrderManagement.Infrastructure.Data;
 using OrderManagement.Infrastructure.Data.Seed;
-using OrderManagement.Core.Interfaces;
 using OrderManagement.Infrastructure.Services;
 using OrderManagement.Infrastructure.Shopify;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,17 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("login", limiter =>
+    {
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.PermitLimit = 10;
+        limiter.QueueLimit = 0;
+    });
+});
+
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "OrderManagement.Auth";
@@ -78,10 +91,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.WithOrigins(
+            "http://localhost:4200",
+            "https://your-static-web-app-url.azurestaticapps.net"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
@@ -118,6 +134,9 @@ if (app.Environment.IsDevelopment())
         userManager,
         roleManager);
 }
+
+app.UseRateLimiter();
+
 
 app.UseExceptionHandler();
 
