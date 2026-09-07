@@ -23,7 +23,7 @@ builder.Services.AddHttpClient<ShopifyAccessTokenService>();
 builder.Services.AddScoped<ShopifyOrderSyncService>();
 builder.Services.AddScoped<ShopifyWebhookVerifier>();
 builder.Services.AddScoped<ShopifyReconciliationService>();
-builder.Services.AddHostedService<ShopifyReconciliationBackgroundService>();
+//builder.Services.AddHostedService<ShopifyReconciliationBackgroundService>();
 
 builder.Services.AddDataProtection();
 
