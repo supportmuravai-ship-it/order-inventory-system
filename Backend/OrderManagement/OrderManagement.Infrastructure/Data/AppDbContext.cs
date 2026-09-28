@@ -213,7 +213,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 x.ExternalOrderId
             })
             .IsUnique()
-            .HasFilter("[ExternalOrderId] IS NOT NULL");
+            .HasFilter("\"ExternalOrderId\" IS NOT NULL");
         });
     }
 

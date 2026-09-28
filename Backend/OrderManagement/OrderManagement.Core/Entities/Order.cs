@@ -50,7 +50,7 @@ public class Order
     public string? CancellationReturnEvidenceUrl { get; set; }
 
     public string? AirwayBillUrl { get; set; }
-    public byte[] RowVersion { get; set; } = [];
+    public uint RowVersion { get; set; }
 
     public Store Store { get; set; } = null!;
 
