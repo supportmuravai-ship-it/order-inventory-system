@@ -93,7 +93,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "http://localhost:4200",
-            "https://proud-wave-0427d0400.3.azurestaticapps.net"
+            "https://proud-wave-0427d0400.3.azurestaticapps.net",
+            "https://order-inventory-system-r1ktf0f1g-squad22.vercel.app"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
