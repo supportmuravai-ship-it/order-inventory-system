@@ -1,24 +1,185 @@
 <div class="min-h-screen bg-gray-100">
   <header class="border-b bg-white">
-    <div class="flex items-center justify-between px-4 py-4 md:px-6">
-      <div>
-        <div class="text-xl font-bold tracking-wide">
-          SQUAD<span class="text-blue-600">21</span>
-        </div>
+  <div class="flex items-center justify-between px-4 py-4 lg:px-6">
+    <div class="flex items-center gap-6">
+
+      <!-- Mobile menu button -->
+      <button
+        type="button"
+        (click)="openMobileMenu()"
+        class="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50 lg:hidden"
+        aria-label="Open navigation"
+      >
+        ☰
+      </button>
+
+      <div class="text-xl font-bold tracking-wide">
+        SQUAD<span class="text-blue-600">21</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      (click)="backToOrders()"
+      class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+    >
+      Back to Orders
+    </button>
+  </div>
+</header>
+
+@if (mobileMenuOpen()) {
+  <!-- Dark background overlay -->
+  <div
+    class="fixed inset-0 z-40 bg-black/40 lg:hidden"
+    (click)="closeMobileMenu()"
+  ></div>
+
+  <!-- Mobile sidebar -->
+  <aside
+    class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 p-4 shadow-xl lg:hidden"
+  >
+    <div class="mb-6 flex items-center justify-between">
+      <div class="text-lg font-bold text-white">
+        SQUAD<span class="text-blue-400">21</span>
       </div>
 
       <button
         type="button"
-        (click)="backToOrders()"
-        class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+        (click)="closeMobileMenu()"
+        class="rounded-lg px-3 py-2 text-xl text-gray-300 hover:bg-slate-800"
+        aria-label="Close navigation"
       >
-        Back to Orders
+        ×
       </button>
     </div>
-  </header>
 
-<div class="min-h-screen bg-gray-100 p-4 md:p-6">
-  <div class="mx-auto max-w-7xl">
+    <div class="space-y-2">
+
+      <!-- Admin Dashboard -->
+      <button
+        type="button"
+        (click)="closeMobileMenu()"
+        class="w-full rounded-lg bg-blue-600 px-4 py-3 text-left text-sm font-medium text-white"
+      >
+        Admin Dashboard
+      </button>
+
+      <!-- All Orders -->
+      <button
+        type="button"
+        (click)="backToOrders(); closeMobileMenu()"
+        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+      >
+        All Orders
+      </button>
+
+      <!-- Tickets -->
+      <button
+        type="button"
+        (click)="openTickets(); closeMobileMenu()"
+        class="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+      >
+        <span>Tickets</span>
+
+        @if (openTicketCount() > 0) {
+          <span
+            class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
+          >
+            {{ openTicketCount() }}
+          </span>
+        }
+      </button>
+
+      <!-- Add Order -->
+      <button
+        type="button"
+        (click)="openCreateOrder(); closeMobileMenu()"
+        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+      >
+        Add Order
+      </button>
+
+      <!-- Import Orders -->
+      <button
+        type="button"
+        (click)="openImportOrders(); closeMobileMenu()"
+        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+      >
+        Import Orders
+      </button>
+
+    </div>
+  </aside>
+}
+
+<div class="min-h-screen bg-gray-100">
+  <div class="flex">
+
+    <!-- Desktop Sidebar -->
+    <aside class="hidden min-h-[calc(100vh-73px)] w-60 bg-slate-900 p-4 lg:block">
+
+      <div class="mb-6 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white">
+        Admin
+      </div>
+
+      <div class="space-y-2">
+
+        <!-- Admin Dashboard -->
+        <div class="rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white">
+          Admin Dashboard
+        </div>
+
+        <!-- All Orders -->
+        <button
+          type="button"
+          (click)="backToOrders()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          All Orders
+        </button>
+
+        <!-- Tickets -->
+        <button
+          type="button"
+          (click)="openTickets()"
+          class="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          <span>Tickets</span>
+
+          @if (openTicketCount() > 0) {
+            <span
+              class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
+            >
+              {{ openTicketCount() }}
+            </span>
+          }
+        </button>
+
+        <!-- Add Order -->
+        <button
+          type="button"
+          (click)="openCreateOrder()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          Add Order
+        </button>
+
+        <!-- Import Orders -->
+        <button
+          type="button"
+          (click)="openImportOrders()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          Import Orders
+        </button>
+
+      </div>
+    </aside>
+
+    <!-- Admin Main Content -->
+    <main class="min-w-0 flex-1 p-4 md:p-6">
+      <div class="mx-auto max-w-7xl">
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
       <p class="mt-1 text-sm text-gray-500">Global order overview and Shopify store health.</p>
@@ -584,5 +745,7 @@
         </div>
       </section>
     }
+      </div>
+    </main>
   </div>
 </div>

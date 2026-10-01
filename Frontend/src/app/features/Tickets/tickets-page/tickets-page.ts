@@ -23,6 +23,9 @@ export class TicketsPageComponent implements OnInit {
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
+  readonly mobileMenuOpen = signal(false);
+readonly openTicketCount = signal(0);
+
   readonly TicketStatus = TicketStatus;
 
   readonly tickets = signal<TicketListItem[]>([]);
@@ -60,6 +63,7 @@ readonly errorMessage = signal('');
   if (this.isAdmin) {
     this.loadUsersForFilter();
   }
+  this.loadOpenTicketCount();
 }
 
   loadTickets(): void {
@@ -115,9 +119,6 @@ readonly errorMessage = signal('');
     this.router.navigate(['/workspace/orders', orderId]);
   }
 
-  backToOrders(): void {
-    this.router.navigate(['/workspace']);
-  }
   changeStatusFilter(): void {
     this.page = 1;
     this.loadTickets();
@@ -163,6 +164,11 @@ readonly errorMessage = signal('');
       },
     });
   }
+
+  openAdminDashboard(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/admin']);
+}
 
   closeTicketDetails(): void {
     this.selectedTicket.set(null);
@@ -275,6 +281,51 @@ readonly errorMessage = signal('');
 
   this.ticketService.getAssignableUsers(store.id).subscribe({
     next: (users) => this.assignableUsers.set(users),
+  });
+}
+
+openMobileMenu(): void {
+  this.mobileMenuOpen.set(true);
+}
+
+closeMobileMenu(): void {
+  this.mobileMenuOpen.set(false);
+}
+
+backToOrders(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace']);
+}
+
+openCreateOrder(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/create-order']);
+}
+
+openImportOrders(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/import-orders']);
+}
+
+openTickets(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/tickets']);
+}
+
+private loadOpenTicketCount(): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
+  }
+
+  this.ticketService.getMyOpenCount(store.id).subscribe({
+    next: (count) => {
+      this.openTicketCount.set(count);
+    },
+    error: () => {
+      this.openTicketCount.set(0);
+    },
   });
 }
 }

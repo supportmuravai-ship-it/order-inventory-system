@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { CreateManualOrderItem, CreateManualOrderRequest } from '../models/order.model';
 import { OrdersService } from '../services/orders.service';
+import { TicketService } from '../../Tickets/ticket.service';
 
 @Component({
   selector: 'app-create-order',
@@ -16,11 +17,16 @@ import { OrdersService } from '../services/orders.service';
   templateUrl: './create-order.html',
 })
 
-export class CreateOrderComponent {
+export class CreateOrderComponent implements OnInit {
   readonly authService = inject(AuthService);
 
   private readonly ordersService = inject(OrdersService);
   private readonly router = inject(Router);
+
+  readonly mobileMenuOpen = signal(false);
+readonly openTicketCount = signal(0);
+
+private readonly ticketService = inject(TicketService);
 
   readonly saving = signal(false);
   readonly errorMessage = signal('');
@@ -37,6 +43,10 @@ export class CreateOrderComponent {
   totalAmount = 0;
 
   items: CreateManualOrderItem[] = [this.createEmptyItem()];
+
+  ngOnInit(): void {
+  this.loadOpenTicketCount();
+}
 
   addItem(): void {
   this.items.push(
@@ -227,5 +237,51 @@ removeItem(index: number): void {
   onNumberWheel(event: WheelEvent): void {
   const input = event.target as HTMLInputElement;
   input.blur();
+}
+
+openMobileMenu(): void {
+  this.mobileMenuOpen.set(true);
+}
+
+closeMobileMenu(): void {
+  this.mobileMenuOpen.set(false);
+}
+
+openAdminDashboard(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/admin']);
+}
+
+openTickets(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/tickets']);
+}
+
+openCreateOrder(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/create-order']);
+}
+
+openImportOrders(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/import-orders']);
+}
+
+private loadOpenTicketCount(): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    this.openTicketCount.set(0);
+    return;
+  }
+
+  this.ticketService.getMyOpenCount(store.id).subscribe({
+    next: (count) => this.openTicketCount.set(count),
+    error: () => this.openTicketCount.set(0),
+  });
+}
+
+get isAdmin(): boolean {
+  return this.authService.currentUser()?.roles?.includes('Admin') ?? false;
 }
 }

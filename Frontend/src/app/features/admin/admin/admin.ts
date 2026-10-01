@@ -3,6 +3,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminService } from '../admin.service';
 import { AdminOrderKpis, AdminShopifyHealth, AdminUserListItem } from '../admin.models';
+import { TicketService } from '../../Tickets/ticket.service';
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-admin',
@@ -13,8 +15,10 @@ import { AdminOrderKpis, AdminShopifyHealth, AdminUserListItem } from '../admin.
 export class AdminComponent implements OnInit {
   private readonly adminService = inject(AdminService);
     private readonly router = inject(Router);
+    private readonly ticketService = inject(TicketService);
+    readonly authService = inject(AuthService);
 
-
+  readonly openTicketCount = signal(0);
   readonly loading = signal(true);
   readonly errorMessage = signal('');
 
@@ -48,6 +52,8 @@ export class AdminComponent implements OnInit {
   readonly createStoreMessage = signal('');
   readonly createStoreError = signal('');
 
+  readonly mobileMenuOpen = signal(false);
+
   readonly kpis = signal<AdminOrderKpis>({
     totalOrders: 0,
     new: 0,
@@ -69,11 +75,25 @@ export class AdminComponent implements OnInit {
   ngOnInit(): void {
     this.loadDashboard();
     this.loadUsers();
+    this.loadOpenTicketCount();
   }
 
-  backToOrders(): void {
-    this.router.navigate(['/workspace']);
+  private loadOpenTicketCount(): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
   }
+
+  this.ticketService.getMyOpenCount(store.id).subscribe({
+    next: (count) => {
+      this.openTicketCount.set(count);
+    },
+    error: () => {
+      this.openTicketCount.set(0);
+    },
+  });
+}
 
   private loadDashboard(): void {
     this.loading.set(true);
@@ -376,5 +396,33 @@ syncStore(storeId: number): void {
       }
 
     });
+}
+
+openMobileMenu(): void {
+  this.mobileMenuOpen.set(true);
+}
+
+closeMobileMenu(): void {
+  this.mobileMenuOpen.set(false);
+}
+
+backToOrders(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace']);
+}
+
+openCreateOrder(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/create-order']);
+}
+
+openImportOrders(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/import-orders']);
+}
+
+openTickets(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/tickets']);
 }
 }
