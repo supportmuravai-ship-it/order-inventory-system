@@ -75,5 +75,8 @@ public class OrderDetailsDto
 
     public List<TrackingHistoryDto> TrackingHistory { get; set; } = [];
 
+    public List<TrackingStatusHistoryDto> TrackingStatusHistory { get; set; }
+    = new();
+
 }
 

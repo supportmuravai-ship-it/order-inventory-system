@@ -69,4 +69,7 @@ public class Order
 
     public ICollection<OrderNote> Notes { get; set; } = new List<OrderNote>();
     public ICollection<OrderNoteHistory> NoteHistory { get; set; } = new List<OrderNoteHistory>();
+
+    public ICollection<TrackingStatusHistory> TrackingStatusHistory { get; set; }
+    = new List<TrackingStatusHistory>();
 }

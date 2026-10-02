@@ -108,6 +108,8 @@ cancellationReturnEvidenceUrl: string | null;
 airwayBillUrl: string | null;
   items: OrderItem[];
 
+  trackingStatusHistory: TrackingStatusHistory[];
+
 }
 
 export interface PagedResult<T> {
@@ -198,6 +200,14 @@ export interface OrderNoteHistory {
   noteType: number;
   oldText: string | null;
   newText: string | null;
+  changedByUserId: string;
+  changedBy: string;
+  changedAtUtc: string;
+}
+
+export interface TrackingStatusHistory {
+  oldStatus: string | null;
+  newStatus: string | null;
   changedByUserId: string;
   changedBy: string;
   changedAtUtc: string;

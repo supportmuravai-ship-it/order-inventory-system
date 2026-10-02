@@ -39,6 +39,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<OrderNoteHistory> OrderNoteHistories => Set<OrderNoteHistory>();
     public DbSet<OrderTicket> OrderTickets => Set<OrderTicket>();
 
+    public DbSet<TrackingStatusHistory> TrackingStatusHistories { get; set; }
+
     // ApplicationUser is not written as a DbSet<ApplicationUser> because AppDbContext inherits from: IdentityDbContext<ApplicationUser>. It already adds the users table internally
 
     protected override void OnModelCreating(ModelBuilder builder) // OnModelCreating() is called automatically by EF Core
@@ -56,6 +58,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureOrderNotes(builder);
         ConfigureOrderTicket(builder);
         ConfigureOrderNoteHistory(builder);
+        ConfigureTrackingStatusHistory(builder);
     }
 
     private static void ConfigureStore(ModelBuilder builder)
@@ -479,4 +482,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             });
         });
     }
+
+    private static void ConfigureTrackingStatusHistory(ModelBuilder builder)
+    { 
+    builder.Entity<TrackingStatusHistory>()
+    .HasOne(x => x.Order)
+    .WithMany(x => x.TrackingStatusHistory)
+    .HasForeignKey(x => x.OrderId)
+    .OnDelete(DeleteBehavior.Cascade);
+}
 }

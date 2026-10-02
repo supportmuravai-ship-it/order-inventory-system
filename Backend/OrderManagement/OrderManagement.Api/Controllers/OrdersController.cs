@@ -291,7 +291,8 @@ public class OrdersController : ControllerBase
                             UnitPrice = item.UnitPrice,
                             LineTotal = item.LineTotal
                         })
-                        .ToList()
+                        .ToList(),
+
                 },
 
                 x.LastStatusChangedAtUtc
@@ -656,7 +657,29 @@ public class OrdersController : ControllerBase
                         UnitPrice = item.UnitPrice,
                         LineTotal = item.LineTotal
                     })
-                    .ToList()
+                    .ToList(),
+
+                TrackingStatusHistory = x.TrackingStatusHistory
+    .OrderByDescending(history => history.ChangedAtUtc)
+    .Select(history => new TrackingStatusHistoryDto
+    {
+        OldStatus = history.OldStatus,
+        NewStatus = history.NewStatus,
+
+        ChangedByUserId = history.ChangedByUserId,
+
+        ChangedBy = _dbContext.Users
+            .Where(user => user.Id == history.ChangedByUserId)
+            .Select(user =>
+                user.Email ??
+                user.UserName ??
+                user.Id)
+            .FirstOrDefault() ??
+            history.ChangedByUserId,
+
+        ChangedAtUtc = history.ChangedAtUtc
+    })
+    .ToList(),
             })
             .SingleOrDefaultAsync();
 
@@ -677,6 +700,13 @@ public class OrdersController : ControllerBase
         }
 
         foreach (var history in order.TrackingHistory)
+        {
+            history.ChangedAtUtc = DateTime.SpecifyKind(
+                history.ChangedAtUtc,
+                DateTimeKind.Utc);
+        }
+
+        foreach (var history in order.TrackingStatusHistory)
         {
             history.ChangedAtUtc = DateTime.SpecifyKind(
                 history.ChangedAtUtc,
@@ -1103,10 +1133,28 @@ public class OrdersController : ControllerBase
             return NoContent();
         }
 
+        var now = DateTime.UtcNow;
+
+        var history = new TrackingStatusHistory
+        {
+            OrderId = order.Id,
+            OldStatus = order.FinalDecision,
+            NewStatus = finalDecision,
+            ChangedByUserId = userId,
+            ChangedAtUtc = now
+        };
+
+        await using var transaction =
+            await _dbContext.Database.BeginTransactionAsync();
+
+        _dbContext.TrackingStatusHistories.Add(history);
+
         order.FinalDecision = finalDecision;
-        order.UpdatedAtUtc = DateTime.UtcNow;
+        order.UpdatedAtUtc = now;
 
         await _dbContext.SaveChangesAsync();
+
+        await transaction.CommitAsync();
 
         return NoContent();
     }

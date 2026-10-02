@@ -937,6 +937,56 @@
           </div>
         }
       </section>
+
+      <!-- Tracking Status History -->
+<section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+  <div class="border-b border-gray-200 px-5 py-4">
+    <h2 class="text-lg font-semibold text-gray-900">
+      Tracking Status History
+    </h2>
+  </div>
+
+  @if (order.trackingStatusHistory.length === 0) {
+    <div class="p-5 text-sm text-gray-500">
+      No tracking status changes recorded yet.
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+          <tr>
+            <th class="px-4 py-3">Previous</th>
+            <th class="px-4 py-3">New</th>
+            <th class="px-4 py-3">Changed By</th>
+            <th class="px-4 py-3">Changed At</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-100">
+          @for (history of order.trackingStatusHistory; track $index) {
+            <tr>
+              <td class="px-4 py-3">
+                {{ history.oldStatus || '—' }}
+              </td>
+
+              <td class="px-4 py-3 font-medium">
+                {{ history.newStatus || '—' }}
+              </td>
+
+              <td class="px-4 py-3">
+                {{ history.changedBy }}
+              </td>
+
+              <td class="whitespace-nowrap px-4 py-3">
+                {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
     }
     </main>
   </div>
