@@ -62,12 +62,17 @@ readonly creatingTicket = signal(false);
 readonly cancellationReason = signal('');
 readonly cancellationEvidenceUrl = signal('');
 
+
+readonly mobileMenuOpen = signal(false);
+readonly openTicketCount = signal(0);
+
 ticketAssignedToUserId = '';
 ticketTitle = '';
 ticketMessage = '';
 
   ngOnInit(): void {
     this.loadOrder();
+    this.loadOpenTicketCount();
   }
 
   private loadOrder(): void {
@@ -614,6 +619,68 @@ createTicket(): void {
       this.errorMessage.set(
         error.error || 'Failed to create ticket.'
       );
+    },
+  });
+}
+
+openMobileMenu(): void {
+  this.mobileMenuOpen.set(true);
+}
+
+closeMobileMenu(): void {
+  this.mobileMenuOpen.set(false);
+}
+
+private loadOpenTicketCount(): void {
+  const store = this.authService.selectedStore();
+
+  if (!store) {
+    return;
+  }
+
+  this.ticketService.getMyOpenCount(store.id).subscribe({
+    next: (count) => {
+      this.openTicketCount.set(count);
+    },
+    error: () => {
+      this.openTicketCount.set(0);
+    },
+  });
+}
+
+openTickets(): void {
+  this.router.navigate(['/workspace/tickets']);
+}
+
+openCreateOrder(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/create-order']);
+}
+
+openImportOrders(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/workspace/import-orders']);
+}
+
+isAdmin(): boolean {
+  return this.authService.currentUser()?.roles?.includes('Admin') ?? false;
+}
+
+openAdminDashboard(): void {
+  this.mobileMenuOpen.set(false);
+  this.router.navigate(['/admin']);
+}
+
+changeStore(): void {
+  this.authService.selectedStore.set(null);
+  sessionStorage.removeItem('selectedStoreId');
+  this.router.navigate(['/stores']);
+}
+
+logout(): void {
+  this.authService.logout().subscribe({
+    next: () => {
+      this.router.navigate(['/login']);
     },
   });
 }
