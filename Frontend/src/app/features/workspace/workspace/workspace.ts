@@ -417,11 +417,6 @@ export class WorkspaceComponent implements OnInit {
       return;
     }
 
-    if (requiresCancellationDetails && !evidenceUrl) {
-      this.errorMessage.set('Evidence image link is required for Return or Cancelled status.');
-      return;
-    }
-
     this.savingStatusOrderId.set(order.id);
     this.errorMessage.set('');
     this.statusUpdateMessage.set('');
@@ -579,7 +574,7 @@ export class WorkspaceComponent implements OnInit {
         this.finalDecisionEditValue.set('');
 
         this.statusUpdateMessage.set(
-          `${order.displayOrderId} final decision updated successfully.`,
+          `${order.displayOrderId} tracking status updated successfully.`,
         );
 
         this.updateOrderInList({
@@ -592,7 +587,7 @@ export class WorkspaceComponent implements OnInit {
         this.savingFinalDecisionOrderId.set(null);
 
         if (error.status === 403) {
-          this.errorMessage.set('You are not allowed to update the final decision.');
+          this.errorMessage.set('You are not allowed to update the tracking status.');
           return;
         }
 
@@ -601,7 +596,7 @@ export class WorkspaceComponent implements OnInit {
           return;
         }
 
-        this.errorMessage.set('Could not update final decision.');
+        this.errorMessage.set('Could not update tracking status.');
       },
     });
   }

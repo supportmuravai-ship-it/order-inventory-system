@@ -444,7 +444,9 @@
               </div>
 
               <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500"> Final Decision </label>
+                <label class="mb-1 block text-xs font-medium text-gray-500">
+  Tracking Status
+</label>
 
                 <div class="flex gap-2">
                   <input
@@ -452,7 +454,7 @@
                     maxlength="500"
                     [value]="finalDecisionValue()"
                     (input)="finalDecisionValue.set($any($event.target).value)"
-                    placeholder="Final decision"
+                    placeholder="Tracking status"
                     class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
                   />
 
@@ -473,7 +475,6 @@
                   </button>
                 </div>
 
-                <p class="mt-1 text-xs text-gray-400">Admin only</p>
               </div>
 
               <div>

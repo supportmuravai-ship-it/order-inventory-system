@@ -587,7 +587,7 @@
 
                   <th class="whitespace-nowrap px-4 py-3">Order Status</th>
 
-                  <th class="whitespace-nowrap px-4 py-3">Final Decision</th>
+                  <th class="whitespace-nowrap px-4 py-3">Tracking Status</th>
 
                   <th class="whitespace-nowrap px-4 py-3">Warehouse Staff Notes</th>
 
@@ -997,7 +997,7 @@
                                 (input)="finalDecisionEditValue.set($any($event.target).value)"
                                 (keyup.enter)="saveFinalDecision(order)"
                                 [disabled]="savingFinalDecisionOrderId() === order.id"
-                                placeholder="Final decision"
+                                placeholder="Tracking Status"
                                 class="w-48 rounded-lg border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-blue-500"
                               />
 
@@ -1028,9 +1028,9 @@
                               type="button"
                               (click)="startFinalDecisionEdit(order)"
                               class="block max-w-40 truncate rounded px-2 py-1 text-left hover:bg-blue-50 hover:text-blue-600"
-                              [title]="order.finalDecision || 'Add decision'"
+                              [title]="order.finalDecision || 'Add tracking status'"
                             >
-                              {{ order.finalDecision || 'Add decision' }}
+                              {{ order.finalDecision || 'Add tracking status' }}
                             </button>
                           }
                         }

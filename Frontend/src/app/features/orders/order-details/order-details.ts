@@ -394,7 +394,7 @@ ticketMessage = '';
       next: () => {
         this.savingFinalDecision.set(false);
 
-        this.successMessage.set('Final decision updated successfully.');
+        this.successMessage.set('tracking status updated successfully.');
 
         this.loadOrder();
       },
@@ -403,16 +403,16 @@ ticketMessage = '';
         this.savingFinalDecision.set(false);
 
         if (error.status === 403) {
-          this.errorMessage.set('Only an Admin can update the final decision.');
-          return;
-        }
+  this.errorMessage.set('You are not allowed to update the tracking status.');
+  return;
+}
 
         if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set('Could not update final decision.');
+        this.errorMessage.set('Could not update tracking status.');
       },
     });
   }

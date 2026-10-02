@@ -791,15 +791,13 @@ public class OrdersController : ControllerBase
                 return BadRequest("A reason is required when cancelling or returning an order.");
             }
 
-            if (string.IsNullOrWhiteSpace(request.EvidenceUrl))
+            if (!string.IsNullOrWhiteSpace(request.EvidenceUrl))
             {
-                return BadRequest("An evidence image link is required when cancelling or returning an order.");
-            }
-
-            if (!Uri.TryCreate(request.EvidenceUrl.Trim(), UriKind.Absolute, out var evidenceUri) ||
-                evidenceUri.Scheme != Uri.UriSchemeHttps)
-            {
-                return BadRequest("Evidence link must be a valid HTTPS URL.");
+                if (!Uri.TryCreate(request.EvidenceUrl.Trim(), UriKind.Absolute, out var evidenceUri) ||
+                    evidenceUri.Scheme != Uri.UriSchemeHttps)
+                {
+                    return BadRequest("Evidence link must be a valid HTTPS URL.");
+                }
             }
         }
         var now = DateTime.UtcNow;
@@ -823,7 +821,11 @@ public class OrdersController : ControllerBase
         if (requiresCancellationDetails)
         {
             order.CancellationReturnReason = request.Reason!.Trim();
-            order.CancellationReturnEvidenceUrl = request.EvidenceUrl!.Trim();
+
+            order.CancellationReturnEvidenceUrl =
+                string.IsNullOrWhiteSpace(request.EvidenceUrl)
+                    ? null
+                    : request.EvidenceUrl.Trim();
         }
 
         if (request.OrderStatus != OrderStatus.New &&
@@ -1050,7 +1052,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPut("{orderId:int}/final-decision")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> UpdateFinalDecision(
     int storeId,
     int orderId,
@@ -1083,7 +1085,7 @@ public class OrdersController : ControllerBase
             finalDecision.Length > 500)
         {
             return BadRequest(
-                "Final Decision cannot exceed 500 characters.");
+    "Tracking Status cannot exceed 500 characters.");
         }
 
         var order = await _dbContext.Orders
