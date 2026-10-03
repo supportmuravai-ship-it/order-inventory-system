@@ -224,6 +224,7 @@ readonly errorMessage = signal('');
         this.closingTicket.set(false);
         this.selectedTicket.set(null);
         this.loadTickets();
+        this.loadOpenTicketCount();
       },
       error: () => {
         this.closingTicket.set(false);
@@ -250,6 +251,7 @@ readonly errorMessage = signal('');
       next: (users) => {
         this.assignableUsers.set(users);
         this.loadingAssignableUsers.set(false);
+        this.loadOpenTicketCount();
       },
       error: () => {
         this.assignableUsers.set([]);
