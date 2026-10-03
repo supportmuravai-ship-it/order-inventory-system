@@ -27,7 +27,7 @@ public class Order
 
     public string? FinalDecision { get; set; }
 
-    public InvoiceStatus InvoiceStatus { get; set; }
+    public InvoiceStatus InvoiceStatus { get; set; } = InvoiceStatus.COD;
 
     public decimal TotalAmount { get; set; }
 

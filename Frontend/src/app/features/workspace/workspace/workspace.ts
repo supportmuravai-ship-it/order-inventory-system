@@ -754,8 +754,48 @@ export class WorkspaceComponent implements OnInit {
   }
 
   getInvoiceName(status: number): string {
-    return status === 0 ? 'Paid' : 'Unpaid';
+  switch (status) {
+    case 0:
+      return 'Paid';
+
+    case 1:
+      return 'Unpaid';
+
+    case 2:
+      return 'COD';
+
+    case 3:
+      return 'Prepaid';
+
+    case 4:
+      return 'Refund';
+
+    default:
+      return 'Unknown';
   }
+}
+
+getInvoiceClasses(status: number): string {
+  switch (status) {
+    case 0: // Paid
+      return 'bg-green-50 text-green-700';
+
+    case 1: // Unpaid
+      return 'bg-orange-50 text-orange-700';
+
+    case 2: // COD
+      return 'bg-blue-50 text-blue-700';
+
+    case 3: // Prepaid
+      return 'bg-purple-50 text-purple-700';
+
+    case 4: // Refund
+      return 'bg-red-50 text-red-700';
+
+    default:
+      return 'bg-gray-50 text-gray-700';
+  }
+}
 
   startShoaibNoteEdit(order: OrderListItem): void {
     this.editingShoaibNoteOrderId.set(order.id);

@@ -2,6 +2,9 @@
 
 public enum InvoiceStatus
 {
-    Paid,
-    Unpaid
+    Paid = 0,
+    Unpaid = 1,
+    COD = 2,
+    Prepaid = 3,
+    Refund = 4
 }

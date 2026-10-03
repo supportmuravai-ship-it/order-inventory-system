@@ -229,8 +229,16 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   getInvoiceName(status: number): string {
-    return status === 0 ? 'Paid' : 'Unpaid';
-  }
+  const statuses: Record<number, string> = {
+    0: 'Paid',
+    1: 'Unpaid',
+    2: 'COD',
+    3: 'Prepaid',
+    4: 'Refund',
+  };
+
+  return statuses[status] ?? 'Unknown';
+}
 
   saveTracking(): void {
     const store = this.authService.selectedStore();

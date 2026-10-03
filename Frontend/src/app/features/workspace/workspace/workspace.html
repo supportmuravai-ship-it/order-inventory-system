@@ -532,6 +532,9 @@
                     <option value="">All</option>
                     <option value="0">Paid</option>
                     <option value="1">Unpaid</option>
+                    <option value="2">COD</option>
+                    <option value="3">Prepaid</option>
+                    <option value="4">Refund</option>
                   </select>
                 </div>
               </div>
@@ -1243,6 +1246,9 @@
                               >
                                 <option value="0">Paid</option>
                                 <option value="1">Unpaid</option>
+                                <option value="2">COD</option>
+                                <option value="3">Prepaid</option>
+                                <option value="4">Refund</option>
                               </select>
 
                               <button
@@ -1275,11 +1281,7 @@
                               type="button"
                               (click)="startInvoiceEdit(order)"
                               class="rounded-full px-3 py-1 text-xs font-medium"
-                              [ngClass]="
-                                order.invoiceStatus === 0
-                                  ? 'bg-green-50 text-green-700'
-                                  : 'bg-orange-50 text-orange-700'
-                              "
+                              [ngClass]="getInvoiceClasses(order.invoiceStatus)"
                               title="Click to change invoice status"
                             >
                               {{ getInvoiceName(order.invoiceStatus) }}

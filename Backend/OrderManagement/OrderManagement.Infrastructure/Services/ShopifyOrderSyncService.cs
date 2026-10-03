@@ -117,7 +117,7 @@ public class ShopifyOrderSyncService
             TrackingNumber = null,
             LocationLink = null,
             FinalDecision = null,
-            InvoiceStatus = InvoiceStatus.Unpaid,
+            InvoiceStatus = InvoiceStatus.COD,
             TotalAmount = ParseMoney(shopifyOrder.TotalPriceSet.ShopMoney.Amount),
             Currency = shopifyOrder.TotalPriceSet.ShopMoney.CurrencyCode,
             OrderDateUtc = shopifyOrder.CreatedAt,

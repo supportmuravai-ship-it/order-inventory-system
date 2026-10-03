@@ -360,7 +360,7 @@ public class CsvOrderImportService : ICsvOrderImportService
 
                 FinalDecision = null,
 
-                InvoiceStatus = InvoiceStatus.Unpaid,
+                InvoiceStatus = InvoiceStatus.COD,
 
                 TotalAmount = first.TotalPrice,
 

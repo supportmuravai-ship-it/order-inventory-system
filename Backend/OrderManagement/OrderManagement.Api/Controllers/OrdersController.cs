@@ -1599,7 +1599,7 @@ public class OrdersController : ControllerBase
 
             FinalDecision = null,
 
-            InvoiceStatus = InvoiceStatus.Unpaid,
+            InvoiceStatus = InvoiceStatus.COD,
 
             TotalAmount = request.TotalAmount,
 
