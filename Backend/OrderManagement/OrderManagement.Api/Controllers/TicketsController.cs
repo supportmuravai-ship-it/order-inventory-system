@@ -302,7 +302,7 @@ public class TicketsController : ControllerBase
             from access in _db.UserStoreAccesses
             join user in _db.Users
                 on access.UserId equals user.Id
-            where access.StoreId == storeId
+            where access.StoreId == storeId && user.IsActive
             orderby user.Email
             select new
             {
