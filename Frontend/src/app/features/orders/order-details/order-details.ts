@@ -54,21 +54,20 @@ export class OrderDetailsComponent implements OnInit {
 
   private readonly ticketService = inject(TicketService);
 
-readonly createTicketOpen = signal(false);
-readonly assignableTicketUsers = signal<AssignableTicketUser[]>([]);
-readonly loadingTicketUsers = signal(false);
-readonly creatingTicket = signal(false);
+  readonly createTicketOpen = signal(false);
+  readonly assignableTicketUsers = signal<AssignableTicketUser[]>([]);
+  readonly loadingTicketUsers = signal(false);
+  readonly creatingTicket = signal(false);
 
-readonly cancellationReason = signal('');
-readonly cancellationEvidenceUrl = signal('');
+  readonly cancellationReason = signal('');
+  readonly cancellationEvidenceUrl = signal('');
 
+  readonly mobileMenuOpen = signal(false);
+  readonly openTicketCount = signal(0);
 
-readonly mobileMenuOpen = signal(false);
-readonly openTicketCount = signal(0);
-
-ticketAssignedToUserIds: string[] = [];
-ticketTitle = '';
-ticketMessage = '';
+  ticketAssignedToUserIds: string[] = [];
+  ticketTitle = '';
+  ticketMessage = '';
 
   ngOnInit(): void {
     this.loadOrder();
@@ -129,73 +128,73 @@ ticketMessage = '';
   }
 
   saveStatus(): void {
-  const store = this.authService.selectedStore();
-  const order = this.order();
-  const status = this.selectedStatus();
+    const store = this.authService.selectedStore();
+    const order = this.order();
+    const status = this.selectedStatus();
 
-  if (!store || !order || status === null) {
-    return;
+    if (!store || !order || status === null) {
+      return;
+    }
+
+    if (status === order.orderStatus) {
+      return;
+    }
+
+    const requiresCancellationDetails = status === 4 || status === 6;
+
+    const reason = this.cancellationReason().trim();
+    const evidenceUrl = this.cancellationEvidenceUrl().trim();
+
+    if (requiresCancellationDetails && !reason) {
+      this.errorMessage.set('Reason is required for Return or Cancelled status.');
+      return;
+    }
+
+    if (requiresCancellationDetails && !evidenceUrl) {
+      this.errorMessage.set('Evidence image link is required for Return or Cancelled status.');
+      return;
+    }
+
+    this.savingStatus.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.ordersService
+      .updateOrderStatus(
+        store.id,
+        order.id,
+        status,
+        requiresCancellationDetails ? reason : undefined,
+        requiresCancellationDetails ? evidenceUrl : undefined,
+      )
+      .subscribe({
+        next: () => {
+          this.cancellationReason.set('');
+          this.cancellationEvidenceUrl.set('');
+
+          this.successMessage.set('Order status updated successfully.');
+          this.savingStatus.set(false);
+
+          this.loadOrder();
+        },
+
+        error: (error: HttpErrorResponse) => {
+          this.savingStatus.set(false);
+
+          if (error.status === 403) {
+            this.errorMessage.set('You are not allowed to update order status.');
+            return;
+          }
+
+          if (typeof error.error === 'string' && error.error.trim()) {
+            this.errorMessage.set(error.error);
+            return;
+          }
+
+          this.errorMessage.set('Could not update order status.');
+        },
+      });
   }
-
-  if (status === order.orderStatus) {
-    return;
-  }
-
-  const requiresCancellationDetails = status === 4 || status === 6;
-
-  const reason = this.cancellationReason().trim();
-  const evidenceUrl = this.cancellationEvidenceUrl().trim();
-
-  if (requiresCancellationDetails && !reason) {
-    this.errorMessage.set('Reason is required for Return or Cancelled status.');
-    return;
-  }
-
-  if (requiresCancellationDetails && !evidenceUrl) {
-    this.errorMessage.set('Evidence image link is required for Return or Cancelled status.');
-    return;
-  }
-
-  this.savingStatus.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
-
-  this.ordersService
-    .updateOrderStatus(
-      store.id,
-      order.id,
-      status,
-      requiresCancellationDetails ? reason : undefined,
-      requiresCancellationDetails ? evidenceUrl : undefined,
-    )
-    .subscribe({
-      next: () => {
-        this.cancellationReason.set('');
-        this.cancellationEvidenceUrl.set('');
-
-        this.successMessage.set('Order status updated successfully.');
-        this.savingStatus.set(false);
-
-        this.loadOrder();
-      },
-
-      error: (error: HttpErrorResponse) => {
-        this.savingStatus.set(false);
-
-        if (error.status === 403) {
-          this.errorMessage.set('You are not allowed to update order status.');
-          return;
-        }
-
-        if (typeof error.error === 'string' && error.error.trim()) {
-          this.errorMessage.set(error.error);
-          return;
-        }
-
-        this.errorMessage.set('Could not update order status.');
-      },
-    });
-}
 
   backToOrders(): void {
     this.router.navigate(['/workspace']);
@@ -403,9 +402,9 @@ ticketMessage = '';
         this.savingFinalDecision.set(false);
 
         if (error.status === 403) {
-  this.errorMessage.set('You are not allowed to update the tracking status.');
-  return;
-}
+          this.errorMessage.set('You are not allowed to update the tracking status.');
+          return;
+        }
 
         if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
@@ -418,40 +417,33 @@ ticketMessage = '';
   }
 
   saveShoaibNote(): void {
-  const store = this.authService.selectedStore();
-  const order = this.order();
+    const store = this.authService.selectedStore();
+    const order = this.order();
 
-  if (!store || !order) {
-    return;
-  }
+    if (!store || !order) {
+      return;
+    }
 
-  const value = this.shoaibNoteValue().trim();
+    const value = this.shoaibNoteValue().trim();
 
-  const text =
-    value === '' ? null : value;
+    const text = value === '' ? null : value;
 
-  if (text === order.shoaibNote) {
-    return;
-  }
+    if (text === order.shoaibNote) {
+      return;
+    }
 
-  this.savingShoaibNote.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
+    this.savingShoaibNote.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
-  this.ordersService
-    .updateShoaibNote(
-      store.id,
-      order.id,
-      text,
-    )
-    .subscribe({
+    this.ordersService.updateShoaibNote(store.id, order.id, text).subscribe({
       next: () => {
         this.savingShoaibNote.set(false);
 
         this.successMessage.set(
           text === null
-            ? "Customer support Note cleared successfully."
-            : "Customer support Note updated successfully.",
+            ? 'Customer support Note cleared successfully.'
+            : 'Customer support Note updated successfully.',
         );
 
         this.loadOrder();
@@ -461,55 +453,41 @@ ticketMessage = '';
         this.savingShoaibNote.set(false);
 
         if (error.status === 403) {
-          this.errorMessage.set(
-            "You are not allowed to update Customer Support Note.",
-          );
+          this.errorMessage.set('You are not allowed to update Customer Support Note.');
           return;
         }
 
-        if (
-          typeof error.error === 'string' &&
-          error.error.trim()
-        ) {
+        if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set(
-          "Could not update Customer support Note.",
-        );
+        this.errorMessage.set('Could not update Customer support Note.');
       },
     });
-}
-
-saveTrenvoNote(): void {
-  const store = this.authService.selectedStore();
-  const order = this.order();
-
-  if (!store || !order) {
-    return;
   }
 
-  const value = this.trenvoNoteValue().trim();
+  saveTrenvoNote(): void {
+    const store = this.authService.selectedStore();
+    const order = this.order();
 
-  const text =
-    value === '' ? null : value;
+    if (!store || !order) {
+      return;
+    }
 
-  if (text === order.trenvoNote) {
-    return;
-  }
+    const value = this.trenvoNoteValue().trim();
 
-  this.savingTrenvoNote.set(true);
-  this.errorMessage.set('');
-  this.successMessage.set('');
+    const text = value === '' ? null : value;
 
-  this.ordersService
-    .updateTrenvoNote(
-      store.id,
-      order.id,
-      text,
-    )
-    .subscribe({
+    if (text === order.trenvoNote) {
+      return;
+    }
+
+    this.savingTrenvoNote.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.ordersService.updateTrenvoNote(store.id, order.id, text).subscribe({
       next: () => {
         this.savingTrenvoNote.set(false);
 
@@ -526,183 +504,181 @@ saveTrenvoNote(): void {
         this.savingTrenvoNote.set(false);
 
         if (error.status === 403) {
-          this.errorMessage.set(
-            'You are not allowed to update Warehouse staff Note.',
-          );
+          this.errorMessage.set('You are not allowed to update Warehouse staff Note.');
           return;
         }
 
-        if (
-          typeof error.error === 'string' &&
-          error.error.trim()
-        ) {
+        if (typeof error.error === 'string' && error.error.trim()) {
           this.errorMessage.set(error.error);
           return;
         }
 
-        this.errorMessage.set(
-          'Could not update Warehouse staff Note.',
-        );
+        this.errorMessage.set('Could not update Warehouse staff Note.');
       },
     });
-}
-
-openCreateTicket(): void {
-  const store = this.authService.selectedStore();
-
-  if (!store) {
-    return;
   }
 
-  this.ticketAssignedToUserIds = [];
-  this.ticketTitle = '';
-  this.ticketMessage = '';
+  openCreateTicket(): void {
+    const store = this.authService.selectedStore();
 
-  this.createTicketOpen.set(true);
-  this.loadingTicketUsers.set(true);
-
-  this.ticketService.getAssignableUsers(store.id).subscribe({
-    next: (users) => {
-      this.assignableTicketUsers.set(users);
-      this.loadingTicketUsers.set(false);
-    },
-    error: () => {
-      this.assignableTicketUsers.set([]);
-      this.loadingTicketUsers.set(false);
-    },
-  });
-}
-
-closeCreateTicket(): void {
-  if (this.creatingTicket()) {
-    return;
-  }
-
-  this.createTicketOpen.set(false);
-}
-
-createTicket(): void {
-  const order = this.order();
-
-  if (!order) {
-    return;
-  }
-
-  if (
-  this.ticketAssignedToUserIds.length === 0 ||
-  !this.ticketTitle.trim() ||
-  !this.ticketMessage.trim()
-) {
-  return;
-}
-
-  this.creatingTicket.set(true);
-
-  this.ticketService
-  .createTicket(order.id, {
-    assignedToUserIds: this.ticketAssignedToUserIds,
-    title: this.ticketTitle.trim(),
-    message: this.ticketMessage.trim(),
-  })
-  .subscribe({
-    next: () => {
-      this.creatingTicket.set(false);
-      this.createTicketOpen.set(false);
-
-      this.errorMessage.set('');
-      this.successMessage.set('Ticket created successfully.');
-    },
-    error: (error) => {
-      this.creatingTicket.set(false);
-
-      this.successMessage.set('');
-      this.errorMessage.set(
-        error.error || 'Failed to create ticket.'
-      );
-    },
-  });
-}
-
-openMobileMenu(): void {
-  this.mobileMenuOpen.set(true);
-}
-
-closeMobileMenu(): void {
-  this.mobileMenuOpen.set(false);
-}
-
-private loadOpenTicketCount(): void {
-  const store = this.authService.selectedStore();
-
-  if (!store) {
-    return;
-  }
-
-  this.ticketService.getMyOpenCount(store.id).subscribe({
-    next: (count) => {
-      this.openTicketCount.set(count);
-    },
-    error: () => {
-      this.openTicketCount.set(0);
-    },
-  });
-}
-
-openTickets(): void {
-  this.router.navigate(['/workspace/tickets']);
-}
-
-openCreateOrder(): void {
-  this.mobileMenuOpen.set(false);
-  this.router.navigate(['/workspace/create-order']);
-}
-
-openImportOrders(): void {
-  this.mobileMenuOpen.set(false);
-  this.router.navigate(['/workspace/import-orders']);
-}
-
-isAdmin(): boolean {
-  return this.authService.currentUser()?.roles?.includes('Admin') ?? false;
-}
-
-openAdminDashboard(): void {
-  this.mobileMenuOpen.set(false);
-  this.router.navigate(['/admin']);
-}
-
-changeStore(): void {
-  this.authService.selectedStore.set(null);
-  sessionStorage.removeItem('selectedStoreId');
-  this.router.navigate(['/stores']);
-}
-
-logout(): void {
-  this.authService.logout().subscribe({
-    next: () => {
-      this.router.navigate(['/login']);
-    },
-  });
-}
-
-toggleTicketAssignee(
-  userId: string,
-  checked: boolean,
-): void {
-  if (checked) {
-    if (!this.ticketAssignedToUserIds.includes(userId)) {
-      this.ticketAssignedToUserIds = [
-        ...this.ticketAssignedToUserIds,
-        userId,
-      ];
+    if (!store) {
+      return;
     }
 
-    return;
+    this.ticketAssignedToUserIds = [];
+    this.ticketTitle = '';
+    this.ticketMessage = '';
+
+    this.createTicketOpen.set(true);
+    this.loadingTicketUsers.set(true);
+
+    this.ticketService.getAssignableUsers(store.id).subscribe({
+      next: (users) => {
+        this.assignableTicketUsers.set(users);
+        this.loadingTicketUsers.set(false);
+      },
+      error: () => {
+        this.assignableTicketUsers.set([]);
+        this.loadingTicketUsers.set(false);
+      },
+    });
   }
 
-  this.ticketAssignedToUserIds =
-    this.ticketAssignedToUserIds.filter(
-      id => id !== userId,
-    );
-}
+  closeCreateTicket(): void {
+    if (this.creatingTicket()) {
+      return;
+    }
+
+    this.createTicketOpen.set(false);
+  }
+
+  createTicket(): void {
+    const order = this.order();
+
+    if (!order) {
+      return;
+    }
+
+    if (
+      this.ticketAssignedToUserIds.length === 0 ||
+      !this.ticketTitle.trim() ||
+      !this.ticketMessage.trim()
+    ) {
+      return;
+    }
+
+    this.creatingTicket.set(true);
+
+    this.ticketService
+      .createTicket(order.id, {
+        assignedToUserIds: this.ticketAssignedToUserIds,
+        title: this.ticketTitle.trim(),
+        message: this.ticketMessage.trim(),
+      })
+      .subscribe({
+        next: () => {
+          this.creatingTicket.set(false);
+          this.createTicketOpen.set(false);
+
+          this.errorMessage.set('');
+          this.successMessage.set('Ticket created successfully.');
+        },
+        error: (error) => {
+          this.creatingTicket.set(false);
+
+          this.successMessage.set('');
+          this.errorMessage.set(error.error || 'Failed to create ticket.');
+        },
+      });
+  }
+
+  openMobileMenu(): void {
+    this.mobileMenuOpen.set(true);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
+  private loadOpenTicketCount(): void {
+    const store = this.authService.selectedStore();
+
+    if (!store) {
+      return;
+    }
+
+    this.ticketService.getMyOpenCount(store.id).subscribe({
+      next: (count) => {
+        this.openTicketCount.set(count);
+      },
+      error: () => {
+        this.openTicketCount.set(0);
+      },
+    });
+  }
+
+  openTickets(): void {
+    this.router.navigate(['/workspace/tickets']);
+  }
+
+  openCreateOrder(): void {
+    this.mobileMenuOpen.set(false);
+    this.router.navigate(['/workspace/create-order']);
+  }
+
+  openImportOrders(): void {
+    this.mobileMenuOpen.set(false);
+    this.router.navigate(['/workspace/import-orders']);
+  }
+
+  isAdmin(): boolean {
+    return this.authService.currentUser()?.roles?.includes('Admin') ?? false;
+  }
+
+  openAdminDashboard(): void {
+    this.mobileMenuOpen.set(false);
+    this.router.navigate(['/admin']);
+  }
+
+  changeStore(): void {
+    this.authService.selectedStore.set(null);
+    sessionStorage.removeItem('selectedStoreId');
+    this.router.navigate(['/stores']);
+  }
+
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+    });
+  }
+
+  toggleTicketAssignee(userId: string, checked: boolean): void {
+    if (checked) {
+      if (!this.ticketAssignedToUserIds.includes(userId)) {
+        this.ticketAssignedToUserIds = [...this.ticketAssignedToUserIds, userId];
+      }
+
+      return;
+    }
+
+    this.ticketAssignedToUserIds = this.ticketAssignedToUserIds.filter((id) => id !== userId);
+  }
+
+  getTrackingUrl(trackingNumber: string): string {
+    return `https://centuryexpress.me/track-shipment/?trackno=${encodeURIComponent(trackingNumber)}`;
+  }
+
+  async copyTrackingNumber(trackingNumber: string | null | undefined) {
+    if (!trackingNumber) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(trackingNumber);
+    } catch (error) {
+      console.error('Failed to copy tracking number:', error);
+    }
+  }
 }

@@ -1052,4 +1052,20 @@ export class WorkspaceComponent implements OnInit {
     this.mobileMenuOpen.set(false);
     this.router.navigate(['/admin']);
   }
+
+  getTrackingUrl(trackingNumber: string): string {
+  return `https://centuryexpress.me/track-shipment/?trackno=${encodeURIComponent(trackingNumber)}`;
+}
+
+async copyTrackingNumber(trackingNumber: string | null | undefined) {
+  if (!trackingNumber) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(trackingNumber);
+  } catch (error) {
+    console.error('Failed to copy tracking number:', error);
+  }
+}
 }
