@@ -2,5 +2,5 @@
 
 public class UpdateTicketAssignmentRequest
 {
-    public string AssignedToUserId { get; set; } = string.Empty;
+    public List<string> AssignedToUserIds { get; set; } = [];
 }

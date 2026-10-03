@@ -2,7 +2,7 @@
 
 public class CreateTicketRequest
 {
-    public string AssignedToUserId { get; set; } = string.Empty;
+    public List<string> AssignedToUserIds { get; set; } = [];
     public string Title { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 }

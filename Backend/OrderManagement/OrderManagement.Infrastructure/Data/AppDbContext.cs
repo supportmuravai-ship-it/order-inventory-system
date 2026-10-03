@@ -41,6 +41,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<TrackingStatusHistory> TrackingStatusHistories { get; set; }
 
+    public DbSet<OrderTicketAssignee> OrderTicketAssignees => Set<OrderTicketAssignee>();
+
     // ApplicationUser is not written as a DbSet<ApplicationUser> because AppDbContext inherits from: IdentityDbContext<ApplicationUser>. It already adds the users table internally
 
     protected override void OnModelCreating(ModelBuilder builder) // OnModelCreating() is called automatically by EF Core
@@ -59,6 +61,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureOrderTicket(builder);
         ConfigureOrderNoteHistory(builder);
         ConfigureTrackingStatusHistory(builder);
+        ConfigureOrderTicketAssignee(builder);
     }
 
     private static void ConfigureStore(ModelBuilder builder)
@@ -384,10 +387,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         entity.HasKey(x => x.Id);
 
-        entity.Property(x => x.AssignedToUserId)
-            .HasMaxLength(450)
-            .IsRequired();
-
         entity.Property(x => x.CreatedByUserId)
             .HasMaxLength(450)
             .IsRequired();
@@ -416,11 +415,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         entity.HasOne<ApplicationUser>()
             .WithMany()
-            .HasForeignKey(x => x.AssignedToUserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        entity.HasOne<ApplicationUser>()
-            .WithMany()
             .HasForeignKey(x => x.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -429,18 +423,18 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(x => x.ClosedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasIndex(x => x.OrderId);
-
         entity.HasOne(x => x.Store)
-    .WithMany()
-    .HasForeignKey(x => x.StoreId)
-    .OnDelete(DeleteBehavior.Restrict);
+            .WithMany()
+            .HasForeignKey(x => x.StoreId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasIndex(x => x.OrderId);
 
         entity.HasIndex(x => x.StoreId);
 
         entity.HasIndex(x => new
         {
-            x.AssignedToUserId,
+            x.StoreId,
             x.Status
         });
     }
@@ -491,4 +485,31 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     .HasForeignKey(x => x.OrderId)
     .OnDelete(DeleteBehavior.Cascade);
 }
+
+    private static void ConfigureOrderTicketAssignee(ModelBuilder builder)
+    {
+        var entity = builder.Entity<OrderTicketAssignee>();
+
+        entity.HasKey(x => new
+        {
+            x.OrderTicketId,
+            x.UserId
+        });
+
+        entity.Property(x => x.UserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        entity.HasOne(x => x.OrderTicket)
+            .WithMany(x => x.Assignees)
+            .HasForeignKey(x => x.OrderTicketId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne<ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasIndex(x => x.UserId);
+    }
 }

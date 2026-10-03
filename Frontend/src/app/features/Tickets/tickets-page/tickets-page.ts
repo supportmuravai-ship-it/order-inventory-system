@@ -48,7 +48,7 @@ readonly errorMessage = signal('');
   searchValue = '';
   assignedUserFilter = '';
 
-  ticketAssignedToUserId = '';
+  ticketAssignedToUserIds: string[] = [];
   ticketDisplayOrderId = '';
   ticketTitle = '';
   ticketMessage = '';
@@ -202,7 +202,7 @@ readonly errorMessage = signal('');
       return;
     }
 
-    this.ticketAssignedToUserId = '';
+    this.ticketAssignedToUserIds = [];
     this.ticketDisplayOrderId = '';
     this.ticketTitle = '';
     this.ticketMessage = '';
@@ -229,48 +229,54 @@ readonly errorMessage = signal('');
   }
 
   createTicket(): void {
-    const store = this.authService.selectedStore();
+  const store = this.authService.selectedStore();
 
-    if (
-      !store ||
-      !this.ticketAssignedToUserId ||
-      !this.ticketTitle.trim() ||
-      !this.ticketMessage.trim()
-    ) {
-      return;
-    }
-
-    this.creatingTicket.set(true);
-
-    this.ticketService
-      .createTicketFromPage(store.id, {
-        assignedToUserId: this.ticketAssignedToUserId,
-        displayOrderId: this.ticketDisplayOrderId.trim() || null,
-        title: this.ticketTitle.trim(),
-        message: this.ticketMessage.trim(),
-      })
-      .subscribe({
-  next: () => {
-    this.creatingTicket.set(false);
-    this.createTicketOpen.set(false);
-
-    this.errorMessage.set('');
-    this.successMessage.set('Ticket created successfully.');
-
-    this.loadTickets();
-  },
-  error: (error) => {
-    this.creatingTicket.set(false);
-
-    this.successMessage.set('');
-    this.errorMessage.set(
-      typeof error.error === 'string'
-        ? error.error
-        : 'Failed to create ticket.'
-    );
-  },
-});
+  if (
+    !store ||
+    this.ticketAssignedToUserIds.length === 0 ||
+    !this.ticketTitle.trim() ||
+    !this.ticketMessage.trim()
+  ) {
+    return;
   }
+
+  this.creatingTicket.set(true);
+
+  this.ticketService
+    .createTicketFromPage(store.id, {
+      assignedToUserIds: this.ticketAssignedToUserIds,
+      displayOrderId:
+        this.ticketDisplayOrderId.trim() || null,
+      title: this.ticketTitle.trim(),
+      message: this.ticketMessage.trim(),
+    })
+    .subscribe({
+      next: () => {
+        this.creatingTicket.set(false);
+        this.createTicketOpen.set(false);
+
+        this.errorMessage.set('');
+        this.successMessage.set(
+          'Ticket created successfully.',
+        );
+
+        this.loadTickets();
+        this.loadOpenTicketCount();
+      },
+
+      error: (error) => {
+        this.creatingTicket.set(false);
+
+        this.successMessage.set('');
+
+        this.errorMessage.set(
+          typeof error.error === 'string'
+            ? error.error
+            : 'Failed to create ticket.',
+        );
+      },
+    });
+}
 
   private loadUsersForFilter(): void {
   const store = this.authService.selectedStore();
@@ -327,5 +333,26 @@ private loadOpenTicketCount(): void {
       this.openTicketCount.set(0);
     },
   });
+}
+
+toggleTicketAssignee(
+  userId: string,
+  checked: boolean,
+): void {
+  if (checked) {
+    if (!this.ticketAssignedToUserIds.includes(userId)) {
+      this.ticketAssignedToUserIds = [
+        ...this.ticketAssignedToUserIds,
+        userId,
+      ];
+    }
+
+    return;
+  }
+
+  this.ticketAssignedToUserIds =
+    this.ticketAssignedToUserIds.filter(
+      id => id !== userId,
+    );
 }
 }

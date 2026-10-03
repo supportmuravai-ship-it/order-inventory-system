@@ -22,6 +22,14 @@
         </div>
       </div>
 
+      <button
+      type="button"
+      (click)="backToOrders()"
+      class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+    >
+      Back to Orders
+    </button>
+
       <div class="flex items-center gap-3">
         <div class="hidden text-sm text-gray-600 sm:block">
           {{ authService.currentUser()?.name }}
@@ -91,7 +99,9 @@
         >
           <span>Tickets</span>
           @if (openTicketCount() > 0) {
-            <span class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white">
+            <span
+              class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
+            >
               {{ openTicketCount() }}
             </span>
           }
@@ -147,7 +157,9 @@
         >
           <span>Tickets</span>
           @if (openTicketCount() > 0) {
-            <span class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white">
+            <span
+              class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
+            >
               {{ openTicketCount() }}
             </span>
           }
@@ -172,302 +184,142 @@
     </aside>
 
     <main class="min-w-0 flex-1 p-4 md:p-6">
-    @if (loading()) {
-      <div class="rounded-xl border bg-white p-8 text-center shadow-sm">
-        <p class="text-sm text-gray-500">Loading order...</p>
-      </div>
-    } @else if (errorMessage() && !order()) {
-      <div class="rounded-xl border border-red-200 bg-red-50 p-5">
-        <p class="text-sm text-red-700">
-          {{ errorMessage() }}
-        </p>
-      </div>
-    } @else if (order(); as order) {
-      <div class="mb-6">
-        <p class="text-sm text-gray-500">Order Details</p>
+      @if (loading()) {
+        <div class="rounded-xl border bg-white p-8 text-center shadow-sm">
+          <p class="text-sm text-gray-500">Loading order...</p>
+        </div>
+      } @else if (errorMessage() && !order()) {
+        <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+          <p class="text-sm text-red-700">
+            {{ errorMessage() }}
+          </p>
+        </div>
+      } @else if (order(); as order) {
+        <div class="mb-6">
+          <p class="text-sm text-gray-500">Order Details</p>
 
-        <h1 class="text-2xl font-bold text-gray-900">
-          {{ order.displayOrderId }}
-        </h1>
+          <h1 class="text-2xl font-bold text-gray-900">
+            {{ order.displayOrderId }}
+          </h1>
 
-        <p class="mt-1 text-sm text-gray-500">
-          {{ order.orderDateUtc | date: 'dd MMM yyyy, h:mm a' }}
-        </p>
+          <p class="mt-1 text-sm text-gray-500">
+            {{ order.orderDateUtc | date: 'dd MMM yyyy, h:mm a' }}
+          </p>
 
-        @if (order.needsAttention) {
+          @if (order.needsAttention) {
+            <div
+              class="mt-3 inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+            >
+              Needs Attention ·
+              {{ order.hoursInCurrentStatus | number: '1.0-1' }}
+              hours in {{ getStatusName(order.orderStatus) }}
+            </div>
+          }
+        </div>
+
+        <button
+          type="button"
+          (click)="openCreateTicket()"
+          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 mb-4"
+        >
+          Create Ticket
+        </button>
+
+        @if (successMessage()) {
           <div
-            class="mt-3 inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+            class="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700"
           >
-            Needs Attention ·
-            {{ order.hoursInCurrentStatus | number: '1.0-1' }}
-            hours in {{ getStatusName(order.orderStatus) }}
+            {{ successMessage() }}
           </div>
         }
-      </div>
 
-      <button
-        type="button"
-        (click)="openCreateTicket()"
-        class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 mb-4"
-      >
-        Create Ticket
-      </button>
-
-      @if (successMessage()) {
-        <div class="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-          {{ successMessage() }}
-        </div>
-      }
-
-      @if (errorMessage()) {
-        <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {{ errorMessage() }}
-        </div>
-      }
-
-      <div class="grid gap-5 lg:grid-cols-2">
-        <!-- Customer -->
-        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Customer</h2>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p class="text-xs text-gray-500">Name</p>
-
-              <p class="mt-1 font-medium">
-                {{ order.fullName }}
-              </p>
-            </div>
-
-            <div>
-              <p class="text-xs text-gray-500">Phone</p>
-
-              <p class="mt-1 font-medium">
-                {{ order.phone }}
-              </p>
-            </div>
-
-            <div>
-              <p class="text-xs text-gray-500">Address</p>
-
-              <p class="mt-1">
-                {{ order.addressLine1 }}
-              </p>
-            </div>
-
-            <div>
-              <p class="text-xs text-gray-500">City / Country</p>
-
-              <p class="mt-1">
-                {{ order.city }},
-                {{ order.country }}
-              </p>
-            </div>
+        @if (errorMessage()) {
+          <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {{ errorMessage() }}
           </div>
-        </section>
+        }
 
-        <!-- Operational -->
-        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Operational Details</h2>
-
-          <div class="space-y-4">
-            <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700"> Order Status </label>
-
-              <div class="flex flex-col gap-2 sm:flex-row">
-                <select
-                  [value]="selectedStatus()"
-                  (change)="selectedStatus.set(+$any($event.target).value)"
-                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                >
-                  <option value="0">Confirmed</option>
-
-                  <option value="1">Shipped</option>
-
-                  <option value="2">Delivered</option>
-
-                  <option value="3">No Response</option>
-
-                  <option value="4">Return</option>
-
-                  <option value="5">Return In Process</option>
-
-                  <option value="6">Cancelled</option>
-
-                  <option value="7">Repeated Order</option>
-
-                  <option value="8">New</option>
-                </select>
-
-                <button
-                  type="button"
-                  (click)="saveStatus()"
-                  [disabled]="savingStatus() || selectedStatus() === order.orderStatus"
-                  class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  @if (savingStatus()) {
-                    Saving...
-                  } @else {
-                    Save
-                  }
-                </button>
-              </div>
-
-              @if (selectedStatus() === 4 || selectedStatus() === 6) {
-                <div class="mt-3 space-y-3">
-                  <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-500">
-                      Cancellation / Return Reason
-                    </label>
-
-                    <textarea
-                      rows="3"
-                      maxlength="1000"
-                      [value]="cancellationReason()"
-                      (input)="cancellationReason.set($any($event.target).value)"
-                      [disabled]="savingStatus()"
-                      placeholder="Enter reason..."
-                      class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    ></textarea>
-                  </div>
-
-                  <div>
-                    <label class="mb-1 block text-xs font-medium text-gray-500">
-                      Evidence Image Link
-                    </label>
-
-                    <input
-                      type="url"
-                      maxlength="1000"
-                      [value]="cancellationEvidenceUrl()"
-                      (input)="cancellationEvidenceUrl.set($any($event.target).value)"
-                      [disabled]="savingStatus()"
-                      placeholder="https://drive.google.com/..."
-                      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-              }
-            </div>
+        <div class="grid gap-5 lg:grid-cols-2">
+          <!-- Customer -->
+          <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900">Customer</h2>
 
             <div class="grid gap-4 sm:grid-cols-2">
               <div>
-                <p class="text-xs text-gray-500">Current Status</p>
+                <p class="text-xs text-gray-500">Name</p>
 
                 <p class="mt-1 font-medium">
-                  {{ getStatusName(order.orderStatus) }}
+                  {{ order.fullName }}
                 </p>
               </div>
 
               <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500">
-                  Tracking Number
-                </label>
+                <p class="text-xs text-gray-500">Phone</p>
 
-                <div class="flex gap-2">
-                  <input
-                    type="text"
-                    maxlength="100"
-                    [value]="trackingValue()"
-                    (input)="trackingValue.set($any($event.target).value)"
-                    class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Tracking number"
-                  />
-
-                  <button
-                    type="button"
-                    (click)="saveTracking()"
-                    [disabled]="
-                      savingTracking() || trackingValue().trim() === (order.trackingNumber ?? '')
-                    "
-                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
-                  >
-                    @if (savingTracking()) {
-                      Saving...
-                    } @else {
-                      Save
-                    }
-                  </button>
-                </div>
+                <p class="mt-1 font-medium">
+                  {{ order.phone }}
+                </p>
               </div>
 
               <div>
-                <p class="text-xs text-gray-500">Warehouse</p>
+                <p class="text-xs text-gray-500">Address</p>
 
                 <p class="mt-1">
-                  {{ order.warehouseName || '—' }}
+                  {{ order.addressLine1 }}
                 </p>
               </div>
 
               <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500"> Invoice Status </label>
+                <p class="text-xs text-gray-500">City / Country</p>
 
-                <div class="flex gap-2">
+                <p class="mt-1">
+                  {{ order.city }},
+                  {{ order.country }}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Operational -->
+          <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900">Operational Details</h2>
+
+            <div class="space-y-4">
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700"> Order Status </label>
+
+                <div class="flex flex-col gap-2 sm:flex-row">
                   <select
-                    [value]="invoiceValue()"
-                    (change)="invoiceValue.set(+$any($event.target).value)"
-                    class="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                    [value]="selectedStatus()"
+                    (change)="selectedStatus.set(+$any($event.target).value)"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                   >
-                    <option value="0">Paid</option>
-                    <option value="1">Unpaid</option>
+                    <option value="0">Confirmed</option>
+
+                    <option value="1">Shipped</option>
+
+                    <option value="2">Delivered</option>
+
+                    <option value="3">No Response</option>
+
+                    <option value="4">Return</option>
+
+                    <option value="5">Return In Process</option>
+
+                    <option value="6">Cancelled</option>
+
+                    <option value="7">Repeated Order</option>
+
+                    <option value="8">New</option>
                   </select>
 
                   <button
                     type="button"
-                    (click)="saveInvoiceStatus()"
-                    [disabled]="savingInvoice() || invoiceValue() === order.invoiceStatus"
-                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                    (click)="saveStatus()"
+                    [disabled]="savingStatus() || selectedStatus() === order.orderStatus"
+                    class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    @if (savingInvoice()) {
-                      Saving...
-                    } @else {
-                      Save
-                    }
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <p class="text-xs text-gray-500">Order Source</p>
-
-                <p class="mt-1">
-                  {{ getSourceName(order.orderSource) }}
-                </p>
-              </div>
-
-              <div>
-                <p class="text-xs text-gray-500">Last Status Change</p>
-
-                <p class="mt-1">
-                  {{ order.lastStatusChangedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-                </p>
-              </div>
-
-              <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500">
-  Tracking Status
-</label>
-
-                <div class="flex gap-2">
-                  <input
-                    type="text"
-                    maxlength="500"
-                    [value]="finalDecisionValue()"
-                    (input)="finalDecisionValue.set($any($event.target).value)"
-                    placeholder="Tracking status"
-                    class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-
-                  <button
-                    type="button"
-                    (click)="saveFinalDecision()"
-                    [disabled]="
-                      savingFinalDecision() ||
-                      finalDecisionValue().trim() === (order.finalDecision ?? '')
-                    "
-                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
-                  >
-                    @if (savingFinalDecision()) {
+                    @if (savingStatus()) {
                       Saving...
                     } @else {
                       Save
@@ -475,519 +327,680 @@
                   </button>
                 </div>
 
-              </div>
+                @if (selectedStatus() === 4 || selectedStatus() === 6) {
+                  <div class="mt-3 space-y-3">
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-gray-500">
+                        Cancellation / Return Reason
+                      </label>
 
-              <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500"> Location Link </label>
+                      <textarea
+                        rows="3"
+                        maxlength="1000"
+                        [value]="cancellationReason()"
+                        (input)="cancellationReason.set($any($event.target).value)"
+                        [disabled]="savingStatus()"
+                        placeholder="Enter reason..."
+                        class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      ></textarea>
+                    </div>
 
-                <div class="flex gap-2">
-                  <input
-                    type="url"
-                    maxlength="500"
-                    [value]="locationValue()"
-                    (input)="locationValue.set($any($event.target).value)"
-                    placeholder="https://..."
-                    class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-gray-500">
+                        Evidence Image Link
+                      </label>
 
-                  <button
-                    type="button"
-                    (click)="saveLocation()"
-                    [disabled]="
-                      savingLocation() || locationValue().trim() === (order.locationLink ?? '')
-                    "
-                    class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
-                  >
-                    @if (savingLocation()) {
-                      Saving...
-                    } @else {
-                      Save
-                    }
-                  </button>
-                </div>
-
-                @if (order.locationLink) {
-                  <a
-                    [href]="order.locationLink"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline"
-                  >
-                    Open saved location
-                  </a>
+                      <input
+                        type="url"
+                        maxlength="1000"
+                        [value]="cancellationEvidenceUrl()"
+                        (input)="cancellationEvidenceUrl.set($any($event.target).value)"
+                        [disabled]="savingStatus()"
+                        placeholder="https://drive.google.com/..."
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
                 }
               </div>
 
-              <div>
-                <p class="text-xs text-gray-500">Airway Bill</p>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p class="text-xs text-gray-500">Current Status</p>
 
-                @if (order.airwayBillUrl) {
+                  <p class="mt-1 font-medium">
+                    {{ getStatusName(order.orderStatus) }}
+                  </p>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-500">
+                    Tracking Number
+                  </label>
+
+                  <div class="flex gap-2">
+                    <input
+                      type="text"
+                      maxlength="100"
+                      [value]="trackingValue()"
+                      (input)="trackingValue.set($any($event.target).value)"
+                      class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Tracking number"
+                    />
+
+                    <button
+                      type="button"
+                      (click)="saveTracking()"
+                      [disabled]="
+                        savingTracking() || trackingValue().trim() === (order.trackingNumber ?? '')
+                      "
+                      class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                    >
+                      @if (savingTracking()) {
+                        Saving...
+                      } @else {
+                        Save
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="text-xs text-gray-500">Warehouse</p>
+
+                  <p class="mt-1">
+                    {{ order.warehouseName || '—' }}
+                  </p>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-500">
+                    Invoice Status
+                  </label>
+
+                  <div class="flex gap-2">
+                    <select
+                      [value]="invoiceValue()"
+                      (change)="invoiceValue.set(+$any($event.target).value)"
+                      class="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="0">Paid</option>
+                      <option value="1">Unpaid</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      (click)="saveInvoiceStatus()"
+                      [disabled]="savingInvoice() || invoiceValue() === order.invoiceStatus"
+                      class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                    >
+                      @if (savingInvoice()) {
+                        Saving...
+                      } @else {
+                        Save
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="text-xs text-gray-500">Order Source</p>
+
+                  <p class="mt-1">
+                    {{ getSourceName(order.orderSource) }}
+                  </p>
+                </div>
+
+                <div>
+                  <p class="text-xs text-gray-500">Last Status Change</p>
+
+                  <p class="mt-1">
+                    {{ order.lastStatusChangedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                  </p>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-500">
+                    Tracking Status
+                  </label>
+
+                  <div class="flex gap-2">
+                    <input
+                      type="text"
+                      maxlength="500"
+                      [value]="finalDecisionValue()"
+                      (input)="finalDecisionValue.set($any($event.target).value)"
+                      placeholder="Tracking status"
+                      class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+
+                    <button
+                      type="button"
+                      (click)="saveFinalDecision()"
+                      [disabled]="
+                        savingFinalDecision() ||
+                        finalDecisionValue().trim() === (order.finalDecision ?? '')
+                      "
+                      class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                    >
+                      @if (savingFinalDecision()) {
+                        Saving...
+                      } @else {
+                        Save
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-500">
+                    Location Link
+                  </label>
+
+                  <div class="flex gap-2">
+                    <input
+                      type="url"
+                      maxlength="500"
+                      [value]="locationValue()"
+                      (input)="locationValue.set($any($event.target).value)"
+                      placeholder="https://..."
+                      class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+
+                    <button
+                      type="button"
+                      (click)="saveLocation()"
+                      [disabled]="
+                        savingLocation() || locationValue().trim() === (order.locationLink ?? '')
+                      "
+                      class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                    >
+                      @if (savingLocation()) {
+                        Saving...
+                      } @else {
+                        Save
+                      }
+                    </button>
+                  </div>
+
+                  @if (order.locationLink) {
+                    <a
+                      [href]="order.locationLink"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline"
+                    >
+                      Open saved location
+                    </a>
+                  }
+                </div>
+
+                <div>
+                  <p class="text-xs text-gray-500">Airway Bill</p>
+
+                  @if (order.airwayBillUrl) {
+                    <a
+                      [href]="order.airwayBillUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-1 inline-block text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      Open Airway Bill
+                    </a>
+                  } @else {
+                    <p class="mt-1 text-sm text-gray-400">—</p>
+                  }
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        @if (order.cancellationReturnReason || order.cancellationReturnEvidenceUrl) {
+          <section class="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900">Cancellation / Return Details</h2>
+
+            <div class="space-y-4">
+              <div>
+                <p class="text-xs text-gray-500">Reason</p>
+
+                <p class="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+                  {{ order.cancellationReturnReason || '—' }}
+                </p>
+              </div>
+
+              <div>
+                <p class="text-xs text-gray-500">Evidence</p>
+
+                @if (order.cancellationReturnEvidenceUrl) {
                   <a
-                    [href]="order.airwayBillUrl"
+                    [href]="order.cancellationReturnEvidenceUrl"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="mt-1 inline-block text-sm font-medium text-blue-600 hover:underline"
                   >
-                    Open Airway Bill
+                    Open Evidence
                   </a>
                 } @else {
                   <p class="mt-1 text-sm text-gray-400">—</p>
                 }
               </div>
             </div>
-          </div>
-        </section>
-      </div>
+          </section>
+        }
 
-      @if (order.cancellationReturnReason || order.cancellationReturnEvidenceUrl) {
-        <section class="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 class="mb-4 text-lg font-semibold text-gray-900">Cancellation / Return Details</h2>
+        <!-- Notes -->
+        <div class="mt-5 grid gap-5 lg:grid-cols-2">
+          <!-- Shoaib's Note (customer suppport note)-->
+          <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="mb-4">
+              <h2 class="text-lg font-semibold text-gray-900">Customer Support Note</h2>
 
-          <div class="space-y-4">
-            <div>
-              <p class="text-xs text-gray-500">Reason</p>
-
-              <p class="mt-1 whitespace-pre-wrap text-sm text-gray-800">
-                {{ order.cancellationReturnReason || '—' }}
-              </p>
+              <!-- <p class="mt-1 text-xs text-gray-500">Customer Support note</p> -->
             </div>
 
-            <div>
-              <p class="text-xs text-gray-500">Evidence</p>
+            <textarea
+              rows="5"
+              maxlength="2000"
+              [value]="shoaibNoteValue()"
+              (input)="shoaibNoteValue.set($any($event.target).value)"
+              placeholder="Add Customer Support note..."
+              class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            ></textarea>
 
-              @if (order.cancellationReturnEvidenceUrl) {
-                <a
-                  [href]="order.cancellationReturnEvidenceUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="mt-1 inline-block text-sm font-medium text-blue-600 hover:underline"
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="saveShoaibNote()"
+                [disabled]="
+                  savingShoaibNote() || shoaibNoteValue().trim() === (order.shoaibNote ?? '')
+                "
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                @if (savingShoaibNote()) {
+                  Saving...
+                } @else {
+                  Save
+                }
+              </button>
+
+              @if (order.shoaibNote) {
+                <button
+                  type="button"
+                  (click)="shoaibNoteValue.set(''); saveShoaibNote()"
+                  [disabled]="savingShoaibNote()"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
                 >
-                  Open Evidence
-                </a>
-              } @else {
-                <p class="mt-1 text-sm text-gray-400">—</p>
+                  Clear
+                </button>
               }
             </div>
+
+            @if (order.shoaibNoteUpdatedAtUtc) {
+              <div class="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                <p>
+                  Updated:
+                  {{ order.shoaibNoteUpdatedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                </p>
+
+                @if (order.shoaibNoteUpdatedBy) {
+                  <p class="mt-1">By: {{ order.shoaibNoteUpdatedBy }}</p>
+                }
+              </div>
+            }
+
+            @if (order.shoaibNoteHistory.length > 0) {
+              <div class="mt-5 border-t border-gray-200 pt-4">
+                <h3 class="mb-3 text-sm font-semibold text-gray-800">Note History</h3>
+
+                <div class="space-y-3">
+                  @for (history of order.shoaibNoteHistory; track $index) {
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p class="text-xs font-medium text-gray-500">Previous</p>
+
+                          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700">
+                            {{ history.oldText || '—' }}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p class="text-xs font-medium text-gray-500">New</p>
+
+                          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-900">
+                            {{ history.newText || '—' }}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="mt-3 border-t border-gray-200 pt-2 text-xs text-gray-500">
+                        <span>
+                          {{ history.changedBy }}
+                        </span>
+
+                        <span class="mx-1">·</span>
+
+                        <span>
+                          {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </section>
+
+          <!-- Trenvo Note (warehouse staff note) -->
+          <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="mb-4">
+              <h2 class="text-lg font-semibold text-gray-900">Warehouse Staff Note</h2>
+
+              <!-- <p class="mt-1 text-xs text-gray-500">Warehouse note</p> -->
+            </div>
+
+            <textarea
+              rows="5"
+              maxlength="2000"
+              [value]="trenvoNoteValue()"
+              (input)="trenvoNoteValue.set($any($event.target).value)"
+              placeholder="Add Warehouse Staff note..."
+              class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            ></textarea>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="saveTrenvoNote()"
+                [disabled]="
+                  savingTrenvoNote() || trenvoNoteValue().trim() === (order.trenvoNote ?? '')
+                "
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                @if (savingTrenvoNote()) {
+                  Saving...
+                } @else {
+                  Save
+                }
+              </button>
+
+              @if (order.trenvoNote) {
+                <button
+                  type="button"
+                  (click)="trenvoNoteValue.set(''); saveTrenvoNote()"
+                  [disabled]="savingTrenvoNote()"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                >
+                  Clear
+                </button>
+              }
+            </div>
+
+            @if (order.trenvoNoteUpdatedAtUtc) {
+              <div class="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                <p>
+                  Updated:
+                  {{ order.trenvoNoteUpdatedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                </p>
+
+                @if (order.trenvoNoteUpdatedBy) {
+                  <p class="mt-1">By: {{ order.trenvoNoteUpdatedBy }}</p>
+                }
+              </div>
+            }
+
+            @if (order.trenvoNoteHistory.length > 0) {
+              <div class="mt-5 border-t border-gray-200 pt-4">
+                <h3 class="mb-3 text-sm font-semibold text-gray-800">Note History</h3>
+
+                <div class="space-y-3">
+                  @for (history of order.trenvoNoteHistory; track $index) {
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p class="text-xs font-medium text-gray-500">Previous</p>
+
+                          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700">
+                            {{ history.oldText || '—' }}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p class="text-xs font-medium text-gray-500">New</p>
+
+                          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-900">
+                            {{ history.newText || '—' }}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="mt-3 border-t border-gray-200 pt-2 text-xs text-gray-500">
+                        <span>
+                          {{ history.changedBy }}
+                        </span>
+
+                        <span class="mx-1">·</span>
+
+                        <span>
+                          {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </section>
+        </div>
+
+        <!-- Products -->
+        <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div class="border-b border-gray-200 px-5 py-4">
+            <h2 class="text-lg font-semibold text-gray-900">Products</h2>
           </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <tr>
+                  <th class="px-4 py-3">Product</th>
+
+                  <th class="px-4 py-3">Variant</th>
+
+                  <th class="px-4 py-3">SKU</th>
+
+                  <th class="px-4 py-3">Quantity</th>
+
+                  <th class="px-4 py-3">Unit Price</th>
+
+                  <th class="px-4 py-3">Line Total</th>
+                </tr>
+              </thead>
+
+              <tbody class="divide-y divide-gray-100">
+                @for (item of order.items; track item.id) {
+                  <tr>
+                    <td class="whitespace-nowrap px-4 py-3 font-medium">
+                      {{ item.productName }}
+                    </td>
+
+                    <td class="px-4 py-3">
+                      {{ item.variantName || '—' }}
+                    </td>
+
+                    <td class="px-4 py-3">
+                      {{ item.sku || '—' }}
+                    </td>
+
+                    <td class="px-4 py-3">
+                      {{ item.quantity }}
+                    </td>
+
+                    <td class="whitespace-nowrap px-4 py-3">
+                      {{ order.currency }}
+                      {{ item.unitPrice | number: '1.2-2' }}
+                    </td>
+
+                    <td class="whitespace-nowrap px-4 py-3">
+                      {{ order.currency }}
+                      {{ item.lineTotal | number: '1.2-2' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="border-t border-gray-200 px-5 py-4 text-right">
+            <span class="text-sm text-gray-500"> Total Amount: </span>
+
+            <span class="ml-2 text-lg font-bold text-gray-900">
+              {{ order.currency }}
+              {{ order.totalAmount | number: '1.2-2' }}
+            </span>
+          </div>
+        </section>
+
+        <!-- Status history -->
+        <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div class="border-b border-gray-200 px-5 py-4">
+            <h2 class="text-lg font-semibold text-gray-900">Status History</h2>
+          </div>
+
+          @if (order.statusHistory.length === 0) {
+            <div class="p-5 text-sm text-gray-500">No status changes recorded yet.</div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th class="px-4 py-3">Old Status</th>
+                    <th class="px-4 py-3">New Status</th>
+                    <th class="px-4 py-3">Changed By</th>
+                    <th class="px-4 py-3">Changed At</th>
+                  </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-100">
+                  @for (history of order.statusHistory; track $index) {
+                    <tr>
+                      <td class="px-4 py-3">
+                        {{ getStatusName(history.oldStatus) }}
+                      </td>
+
+                      <td class="px-4 py-3 font-medium">
+                        {{ getStatusName(history.newStatus) }}
+                      </td>
+
+                      <td class="px-4 py-3">
+                        {{ history.changedBy }}
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3">
+                        {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+
+        <!-- Tracking history -->
+
+        <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div class="border-b border-gray-200 px-5 py-4">
+            <h2 class="text-lg font-semibold text-gray-900">Tracking History</h2>
+          </div>
+
+          @if (order.trackingHistory.length === 0) {
+            <div class="p-5 text-sm text-gray-500">No tracking changes recorded yet.</div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th class="px-4 py-3">Old Tracking</th>
+                    <th class="px-4 py-3">New Tracking</th>
+                    <th class="px-4 py-3">Changed By</th>
+                    <th class="px-4 py-3">Changed At</th>
+                  </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-100">
+                  @for (history of order.trackingHistory; track $index) {
+                    <tr>
+                      <td class="px-4 py-3">
+                        {{ history.oldTrackingNumber || '—' }}
+                      </td>
+
+                      <td class="px-4 py-3 font-medium">
+                        {{ history.newTrackingNumber || '—' }}
+                      </td>
+
+                      <td class="px-4 py-3">
+                        {{ history.changedBy }}
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3">
+                        {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+
+        <!-- Tracking Status History -->
+        <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div class="border-b border-gray-200 px-5 py-4">
+            <h2 class="text-lg font-semibold text-gray-900">Tracking Status History</h2>
+          </div>
+
+          @if (order.trackingStatusHistory.length === 0) {
+            <div class="p-5 text-sm text-gray-500">No tracking status changes recorded yet.</div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th class="px-4 py-3">Previous</th>
+                    <th class="px-4 py-3">New</th>
+                    <th class="px-4 py-3">Changed By</th>
+                    <th class="px-4 py-3">Changed At</th>
+                  </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-100">
+                  @for (history of order.trackingStatusHistory; track $index) {
+                    <tr>
+                      <td class="px-4 py-3">
+                        {{ history.oldStatus || '—' }}
+                      </td>
+
+                      <td class="px-4 py-3 font-medium">
+                        {{ history.newStatus || '—' }}
+                      </td>
+
+                      <td class="px-4 py-3">
+                        {{ history.changedBy }}
+                      </td>
+
+                      <td class="whitespace-nowrap px-4 py-3">
+                        {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </section>
       }
-
-      <!-- Notes -->
-      <div class="mt-5 grid gap-5 lg:grid-cols-2">
-        <!-- Shoaib's Note (customer suppport note)-->
-        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Customer Support Note</h2>
-
-            <!-- <p class="mt-1 text-xs text-gray-500">Customer Support note</p> -->
-          </div>
-
-          <textarea
-            rows="5"
-            maxlength="2000"
-            [value]="shoaibNoteValue()"
-            (input)="shoaibNoteValue.set($any($event.target).value)"
-            placeholder="Add Customer Support note..."
-            class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          ></textarea>
-
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              (click)="saveShoaibNote()"
-              [disabled]="
-                savingShoaibNote() || shoaibNoteValue().trim() === (order.shoaibNote ?? '')
-              "
-              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              @if (savingShoaibNote()) {
-                Saving...
-              } @else {
-                Save
-              }
-            </button>
-
-            @if (order.shoaibNote) {
-              <button
-                type="button"
-                (click)="shoaibNoteValue.set(''); saveShoaibNote()"
-                [disabled]="savingShoaibNote()"
-                class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-              >
-                Clear
-              </button>
-            }
-          </div>
-
-          @if (order.shoaibNoteUpdatedAtUtc) {
-            <div class="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-500">
-              <p>
-                Updated:
-                {{ order.shoaibNoteUpdatedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-              </p>
-
-              @if (order.shoaibNoteUpdatedBy) {
-                <p class="mt-1">By: {{ order.shoaibNoteUpdatedBy }}</p>
-              }
-            </div>
-          }
-
-          @if (order.shoaibNoteHistory.length > 0) {
-            <div class="mt-5 border-t border-gray-200 pt-4">
-              <h3 class="mb-3 text-sm font-semibold text-gray-800">Note History</h3>
-
-              <div class="space-y-3">
-                @for (history of order.shoaibNoteHistory; track $index) {
-                  <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                    <div class="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <p class="text-xs font-medium text-gray-500">Previous</p>
-
-                        <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700">
-                          {{ history.oldText || '—' }}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p class="text-xs font-medium text-gray-500">New</p>
-
-                        <p class="mt-1 whitespace-pre-wrap text-sm text-gray-900">
-                          {{ history.newText || '—' }}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div class="mt-3 border-t border-gray-200 pt-2 text-xs text-gray-500">
-                      <span>
-                        {{ history.changedBy }}
-                      </span>
-
-                      <span class="mx-1">·</span>
-
-                      <span>
-                        {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-                      </span>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        </section>
-
-        <!-- Trenvo Note (warehouse staff note) -->
-        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Warehouse Staff Note</h2>
-
-            <!-- <p class="mt-1 text-xs text-gray-500">Warehouse note</p> -->
-          </div>
-
-          <textarea
-            rows="5"
-            maxlength="2000"
-            [value]="trenvoNoteValue()"
-            (input)="trenvoNoteValue.set($any($event.target).value)"
-            placeholder="Add Warehouse Staff note..."
-            class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          ></textarea>
-
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              (click)="saveTrenvoNote()"
-              [disabled]="
-                savingTrenvoNote() || trenvoNoteValue().trim() === (order.trenvoNote ?? '')
-              "
-              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              @if (savingTrenvoNote()) {
-                Saving...
-              } @else {
-                Save
-              }
-            </button>
-
-            @if (order.trenvoNote) {
-              <button
-                type="button"
-                (click)="trenvoNoteValue.set(''); saveTrenvoNote()"
-                [disabled]="savingTrenvoNote()"
-                class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-              >
-                Clear
-              </button>
-            }
-          </div>
-
-          @if (order.trenvoNoteUpdatedAtUtc) {
-            <div class="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-500">
-              <p>
-                Updated:
-                {{ order.trenvoNoteUpdatedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-              </p>
-
-              @if (order.trenvoNoteUpdatedBy) {
-                <p class="mt-1">By: {{ order.trenvoNoteUpdatedBy }}</p>
-              }
-            </div>
-          }
-
-          @if (order.trenvoNoteHistory.length > 0) {
-            <div class="mt-5 border-t border-gray-200 pt-4">
-              <h3 class="mb-3 text-sm font-semibold text-gray-800">Note History</h3>
-
-              <div class="space-y-3">
-                @for (history of order.trenvoNoteHistory; track $index) {
-                  <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                    <div class="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <p class="text-xs font-medium text-gray-500">Previous</p>
-
-                        <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700">
-                          {{ history.oldText || '—' }}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p class="text-xs font-medium text-gray-500">New</p>
-
-                        <p class="mt-1 whitespace-pre-wrap text-sm text-gray-900">
-                          {{ history.newText || '—' }}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div class="mt-3 border-t border-gray-200 pt-2 text-xs text-gray-500">
-                      <span>
-                        {{ history.changedBy }}
-                      </span>
-
-                      <span class="mx-1">·</span>
-
-                      <span>
-                        {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-                      </span>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        </section>
-      </div>
-
-      <!-- Products -->
-      <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-5 py-4">
-          <h2 class="text-lg font-semibold text-gray-900">Products</h2>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-left text-sm">
-            <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-              <tr>
-                <th class="px-4 py-3">Product</th>
-
-                <th class="px-4 py-3">Variant</th>
-
-                <th class="px-4 py-3">SKU</th>
-
-                <th class="px-4 py-3">Quantity</th>
-
-                <th class="px-4 py-3">Unit Price</th>
-
-                <th class="px-4 py-3">Line Total</th>
-              </tr>
-            </thead>
-
-            <tbody class="divide-y divide-gray-100">
-              @for (item of order.items; track item.id) {
-                <tr>
-                  <td class="whitespace-nowrap px-4 py-3 font-medium">
-                    {{ item.productName }}
-                  </td>
-
-                  <td class="px-4 py-3">
-                    {{ item.variantName || '—' }}
-                  </td>
-
-                  <td class="px-4 py-3">
-                    {{ item.sku || '—' }}
-                  </td>
-
-                  <td class="px-4 py-3">
-                    {{ item.quantity }}
-                  </td>
-
-                  <td class="whitespace-nowrap px-4 py-3">
-                    {{ order.currency }}
-                    {{ item.unitPrice | number: '1.2-2' }}
-                  </td>
-
-                  <td class="whitespace-nowrap px-4 py-3">
-                    {{ order.currency }}
-                    {{ item.lineTotal | number: '1.2-2' }}
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        <div class="border-t border-gray-200 px-5 py-4 text-right">
-          <span class="text-sm text-gray-500"> Total Amount: </span>
-
-          <span class="ml-2 text-lg font-bold text-gray-900">
-            {{ order.currency }}
-            {{ order.totalAmount | number: '1.2-2' }}
-          </span>
-        </div>
-      </section>
-
-      <!-- Status history -->
-      <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-5 py-4">
-          <h2 class="text-lg font-semibold text-gray-900">Status History</h2>
-        </div>
-
-        @if (order.statusHistory.length === 0) {
-          <div class="p-5 text-sm text-gray-500">No status changes recorded yet.</div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
-              <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-                <tr>
-                  <th class="px-4 py-3">Old Status</th>
-                  <th class="px-4 py-3">New Status</th>
-                  <th class="px-4 py-3">Changed By</th>
-                  <th class="px-4 py-3">Changed At</th>
-                </tr>
-              </thead>
-
-              <tbody class="divide-y divide-gray-100">
-                @for (history of order.statusHistory; track $index) {
-                  <tr>
-                    <td class="px-4 py-3">
-                      {{ getStatusName(history.oldStatus) }}
-                    </td>
-
-                    <td class="px-4 py-3 font-medium">
-                      {{ getStatusName(history.newStatus) }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                      {{ history.changedBy }}
-                    </td>
-
-                    <td class="whitespace-nowrap px-4 py-3">
-                      {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </section>
-
-      <!-- Tracking history -->
-
-      <section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-5 py-4">
-          <h2 class="text-lg font-semibold text-gray-900">Tracking History</h2>
-        </div>
-
-        @if (order.trackingHistory.length === 0) {
-          <div class="p-5 text-sm text-gray-500">No tracking changes recorded yet.</div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
-              <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-                <tr>
-                  <th class="px-4 py-3">Old Tracking</th>
-                  <th class="px-4 py-3">New Tracking</th>
-                  <th class="px-4 py-3">Changed By</th>
-                  <th class="px-4 py-3">Changed At</th>
-                </tr>
-              </thead>
-
-              <tbody class="divide-y divide-gray-100">
-                @for (history of order.trackingHistory; track $index) {
-                  <tr>
-                    <td class="px-4 py-3">
-                      {{ history.oldTrackingNumber || '—' }}
-                    </td>
-
-                    <td class="px-4 py-3 font-medium">
-                      {{ history.newTrackingNumber || '—' }}
-                    </td>
-
-                    <td class="px-4 py-3">
-                      {{ history.changedBy }}
-                    </td>
-
-                    <td class="whitespace-nowrap px-4 py-3">
-                      {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </section>
-
-      <!-- Tracking Status History -->
-<section class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-  <div class="border-b border-gray-200 px-5 py-4">
-    <h2 class="text-lg font-semibold text-gray-900">
-      Tracking Status History
-    </h2>
-  </div>
-
-  @if (order.trackingStatusHistory.length === 0) {
-    <div class="p-5 text-sm text-gray-500">
-      No tracking status changes recorded yet.
-    </div>
-  } @else {
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-left text-sm">
-        <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-          <tr>
-            <th class="px-4 py-3">Previous</th>
-            <th class="px-4 py-3">New</th>
-            <th class="px-4 py-3">Changed By</th>
-            <th class="px-4 py-3">Changed At</th>
-          </tr>
-        </thead>
-
-        <tbody class="divide-y divide-gray-100">
-          @for (history of order.trackingStatusHistory; track $index) {
-            <tr>
-              <td class="px-4 py-3">
-                {{ history.oldStatus || '—' }}
-              </td>
-
-              <td class="px-4 py-3 font-medium">
-                {{ history.newStatus || '—' }}
-              </td>
-
-              <td class="px-4 py-3">
-                {{ history.changedBy }}
-              </td>
-
-              <td class="whitespace-nowrap px-4 py-3">
-                {{ history.changedAtUtc | date: 'dd MMM yyyy, h:mm a' }}
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  }
-</section>
-    }
     </main>
   </div>
 </div>
@@ -1021,18 +1034,48 @@
           @if (loadingTicketUsers()) {
             <div class="text-sm text-gray-500">Loading users...</div>
           } @else {
-            <select
-              [(ngModel)]="ticketAssignedToUserId"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">Select user</option>
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700"> Assign To </label>
 
-              @for (user of assignableTicketUsers(); track user.userId) {
-                <option [value]="user.userId">
-                  {{ user.email }} — {{ user.roles.join(', ') }}
-                </option>
+              @if (loadingTicketUsers()) {
+                <div class="text-sm text-gray-500">Loading users...</div>
+              } @else {
+                <div
+                  class="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-gray-300 bg-white p-2"
+                >
+                  @for (user of assignableTicketUsers(); track user.userId) {
+                    <label
+                      class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="ticketAssignedToUserIds.includes(user.userId)"
+                        (change)="toggleTicketAssignee(user.userId, $any($event.target).checked)"
+                        class="h-4 w-4 rounded border-gray-300"
+                      />
+
+                      <div class="min-w-0 flex-1">
+                        <div class="truncate text-sm font-medium text-gray-900">
+                          {{ user.email }}
+                        </div>
+
+                        <div class="text-xs text-gray-500">
+                          {{ user.roles.join(', ') }}
+                        </div>
+                      </div>
+                    </label>
+                  }
+                </div>
+
+                @if (ticketAssignedToUserIds.length > 0) {
+                  <div class="mt-2 text-xs text-gray-500">
+                    {{ ticketAssignedToUserIds.length }}
+                    user{{ ticketAssignedToUserIds.length === 1 ? '' : 's' }}
+                    selected
+                  </div>
+                }
               }
-            </select>
+            </div>
           }
         </div>
 
@@ -1075,7 +1118,7 @@
           (click)="createTicket()"
           [disabled]="
             creatingTicket() ||
-            !ticketAssignedToUserId ||
+            ticketAssignedToUserIds.length === 0 ||
             !ticketTitle.trim() ||
             !ticketMessage.trim()
           "

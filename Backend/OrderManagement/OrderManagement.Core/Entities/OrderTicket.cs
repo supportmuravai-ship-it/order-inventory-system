@@ -9,7 +9,8 @@ public class OrderTicket
     public int StoreId { get; set; }
     public int? OrderId { get; set; }
 
-    public string AssignedToUserId { get; set; } = string.Empty;
+    public ICollection<OrderTicketAssignee> Assignees { get; set; }
+    = new List<OrderTicketAssignee>();
     public string CreatedByUserId { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;

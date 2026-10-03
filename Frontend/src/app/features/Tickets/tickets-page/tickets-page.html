@@ -496,12 +496,19 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
     (click)="closeCreateTicket()"
   >
-    <div class="w-full max-w-lg rounded-xl bg-white shadow-xl" (click)="$event.stopPropagation()">
+    <div
+      class="w-full max-w-lg rounded-xl bg-white shadow-xl"
+      (click)="$event.stopPropagation()"
+    >
       <div class="flex items-center justify-between border-b px-6 py-4">
         <div>
-          <h2 class="text-lg font-semibold text-gray-900">Create Ticket</h2>
+          <h2 class="text-lg font-semibold text-gray-900">
+            Create Ticket
+          </h2>
 
-          <p class="mt-1 text-sm text-gray-500">Order ID is optional.</p>
+          <p class="mt-1 text-sm text-gray-500">
+            Order ID is optional.
+          </p>
         </div>
 
         <button
@@ -514,31 +521,65 @@
       </div>
 
       <div class="space-y-4 p-6">
+
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700"> Assign To * </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700">
+            Assign To *
+          </label>
 
           @if (loadingAssignableUsers()) {
-            <div class="text-sm text-gray-500">Loading users...</div>
+            <div class="text-sm text-gray-500">
+              Loading users...
+            </div>
           } @else {
-            <select
-              [(ngModel)]="ticketAssignedToUserId"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            <div
+              class="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-gray-300 bg-white p-2"
             >
-              <option value="">Select user</option>
-
               @for (user of assignableUsers(); track user.userId) {
-                <option [value]="user.userId">
-                  {{ user.email }} — {{ user.roles.join(', ') }}
-                </option>
+                <label
+                  class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="ticketAssignedToUserIds.includes(user.userId)"
+                    (change)="
+                      toggleTicketAssignee(
+                        user.userId,
+                        $any($event.target).checked
+                      )
+                    "
+                    class="h-4 w-4 rounded border-gray-300"
+                  />
+
+                  <div class="min-w-0 flex-1">
+                    <div class="truncate text-sm font-medium text-gray-900">
+                      {{ user.email }}
+                    </div>
+
+                    <div class="text-xs text-gray-500">
+                      {{ user.roles.join(', ') }}
+                    </div>
+                  </div>
+                </label>
               }
-            </select>
+            </div>
+
+            @if (ticketAssignedToUserIds.length > 0) {
+              <div class="mt-2 text-xs text-gray-500">
+                {{ ticketAssignedToUserIds.length }}
+                user{{ ticketAssignedToUserIds.length === 1 ? '' : 's' }}
+                selected
+              </div>
+            }
           }
         </div>
 
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">
             Order ID
-            <span class="font-normal text-gray-400">(optional)</span>
+            <span class="font-normal text-gray-400">
+              (optional)
+            </span>
           </label>
 
           <input
@@ -550,7 +591,9 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700"> Title * </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700">
+            Title *
+          </label>
 
           <input
             type="text"
@@ -561,7 +604,9 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700"> Message * </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700">
+            Message *
+          </label>
 
           <textarea
             [(ngModel)]="ticketMessage"
@@ -570,6 +615,7 @@
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
           ></textarea>
         </div>
+
       </div>
 
       <div class="flex justify-end gap-3 border-t px-6 py-4">
@@ -586,7 +632,7 @@
           (click)="createTicket()"
           [disabled]="
             creatingTicket() ||
-            !ticketAssignedToUserId ||
+            ticketAssignedToUserIds.length === 0 ||
             !ticketTitle.trim() ||
             !ticketMessage.trim()
           "

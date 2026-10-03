@@ -9,7 +9,11 @@ export interface TicketListItem {
   orderId: number | null;
   displayOrderId: string | null;
 
+  // Kept for backward compatibility.
+  // Backend returns first assigned user's ID.
   assignedToUserId: string;
+
+  // Backend returns all assigned emails joined by commas.
   assignedToEmail: string;
 
   createdByUserId: string;
@@ -26,9 +30,12 @@ export interface TicketDetails {
   id: number;
 
   orderId: number | null;
-displayOrderId: string | null;
+  displayOrderId: string | null;
 
+  // Kept for backward compatibility.
   assignedToUserId: string;
+
+  // Backend returns all assigned emails joined by commas.
   assignedToEmail: string;
 
   createdByUserId: string;
@@ -54,7 +61,11 @@ export interface AssignableTicketUser {
 
 export interface TicketQuery {
   status?: TicketStatus;
+
+  // Keep this singular.
+  // Admin filter still filters tickets containing this user.
   assignedToUserId?: string;
+
   search?: string;
 
   page?: number;
@@ -70,17 +81,17 @@ export interface PagedTickets {
 }
 
 export interface CreateTicketRequest {
-  assignedToUserId: string;
+  assignedToUserIds: string[];
   title: string;
   message: string;
 }
 
 export interface UpdateTicketAssignmentRequest {
-  assignedToUserId: string;
+  assignedToUserIds: string[];
 }
 
 export interface CreateTicketFromPageRequest {
-  assignedToUserId: string;
+  assignedToUserIds: string[];
   displayOrderId: string | null;
   title: string;
   message: string;

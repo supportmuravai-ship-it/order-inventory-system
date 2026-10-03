@@ -4,11 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderManagement.Core.DTOs.Common;
 using OrderManagement.Core.DTOs.Tickets;
+using OrderManagement.Core.Entities;
 using OrderManagement.Core.Enums;
 using OrderManagement.Core.Interfaces;
 using OrderManagement.Infrastructure.Data;
-using Microsoft.AspNetCore.Identity;
-using OrderManagement.Core.Entities;
 
 namespace OrderManagement.Api.Controllers;
 
@@ -28,6 +27,10 @@ public class TicketsController : ControllerBase
         _storeAccessService = storeAccessService;
     }
 
+    // =========================================================
+    // GET TICKETS
+    // =========================================================
+
     [HttpGet]
     public async Task<ActionResult<PagedResultDto<TicketListItemDto>>> GetTickets(
         [FromQuery] int storeId,
@@ -40,7 +43,9 @@ public class TicketsController : ControllerBase
             return Unauthorized();
         }
 
-        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
+        var hasAccess = await _storeAccessService.HasAccessAsync(
+            userId,
+            storeId);
 
         if (!hasAccess)
         {
@@ -68,24 +73,31 @@ public class TicketsController : ControllerBase
         var isAdmin = User.IsInRole("Admin");
 
         var query = _db.OrderTickets
-    .AsNoTracking()
-    .Where(x => x.StoreId == storeId);
+            .AsNoTracking()
+            .Where(x => x.StoreId == storeId);
 
+        // Non-admin users can see:
+        // 1. Tickets assigned to them
+        // 2. Tickets created by them
         if (!isAdmin)
         {
             query = query.Where(x =>
-                x.AssignedToUserId == userId ||
+                x.Assignees.Any(a => a.UserId == userId) ||
                 x.CreatedByUserId == userId);
         }
         else if (!string.IsNullOrWhiteSpace(request.AssignedToUserId))
         {
+            // Admin filter still works exactly like before:
+            // show all tickets containing this user as an assignee.
             query = query.Where(x =>
-                x.AssignedToUserId == request.AssignedToUserId);
+                x.Assignees.Any(a =>
+                    a.UserId == request.AssignedToUserId));
         }
 
         if (request.Status.HasValue)
         {
-            query = query.Where(x => x.Status == request.Status.Value);
+            query = query.Where(x =>
+                x.Status == request.Status.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -100,42 +112,115 @@ public class TicketsController : ControllerBase
 
         var totalCount = await query.CountAsync();
 
-        var items = await query
+        /*
+         * We first load the tickets with their assignee IDs.
+         *
+         * We are keeping TicketListItemDto backward-compatible for now:
+         *
+         * AssignedToUserId = first assigned user's ID
+         * AssignedToEmail  = all assigned emails joined with commas
+         *
+         * This means your existing Angular page does not immediately break.
+         */
+        var rawItems = await query
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(x => new TicketListItemDto
+            .Select(x => new
             {
-                Id = x.Id,
+                x.Id,
 
-                OrderId = x.OrderId,
-                DisplayOrderId = x.Order != null ? x.Order.DisplayOrderId : null,
+                x.OrderId,
 
-                AssignedToUserId = x.AssignedToUserId,
-                AssignedToEmail = _db.Users
-                    .Where(user => user.Id == x.AssignedToUserId)
-                    .Select(user => user.Email ?? "")
-                    .FirstOrDefault()!,
+                DisplayOrderId =
+                    x.Order != null
+                        ? x.Order.DisplayOrderId
+                        : null,
 
-                CreatedByUserId = x.CreatedByUserId,
+                AssignedUserIds = x.Assignees
+                    .Select(a => a.UserId)
+                    .ToList(),
+
+                x.CreatedByUserId,
+
                 CreatedByEmail = _db.Users
-                    .Where(user => user.Id == x.CreatedByUserId)
+                    .Where(user =>
+                        user.Id == x.CreatedByUserId)
                     .Select(user => user.Email ?? "")
-                    .FirstOrDefault()!,
+                    .FirstOrDefault(),
 
-                Title = x.Title,
-                Status = x.Status,
-                CreatedAtUtc = DateTime.SpecifyKind(
-    x.CreatedAtUtc,
-    DateTimeKind.Utc),
-
-                ClosedAtUtc = x.ClosedAtUtc.HasValue
-    ? DateTime.SpecifyKind(
-        x.ClosedAtUtc.Value,
-        DateTimeKind.Utc)
-    : null
+                x.Title,
+                x.Status,
+                x.CreatedAtUtc,
+                x.ClosedAtUtc
             })
             .ToListAsync();
+
+        var allAssigneeIds = rawItems
+            .SelectMany(x => x.AssignedUserIds)
+            .Distinct()
+            .ToList();
+
+        var assigneeEmails = await _db.Users
+            .AsNoTracking()
+            .Where(x => allAssigneeIds.Contains(x.Id))
+            .Select(x => new
+            {
+                x.Id,
+                Email = x.Email ?? ""
+            })
+            .ToDictionaryAsync(
+                x => x.Id,
+                x => x.Email);
+
+        var items = rawItems
+            .Select(x =>
+            {
+                var orderedAssigneeIds = x.AssignedUserIds
+                    .OrderBy(id => id)
+                    .ToList();
+
+                var emails = orderedAssigneeIds
+                    .Where(id => assigneeEmails.ContainsKey(id))
+                    .Select(id => assigneeEmails[id])
+                    .Where(email =>
+                        !string.IsNullOrWhiteSpace(email))
+                    .ToList();
+
+                return new TicketListItemDto
+                {
+                    Id = x.Id,
+
+                    OrderId = x.OrderId,
+                    DisplayOrderId = x.DisplayOrderId,
+
+                    // Backward compatibility
+                    AssignedToUserId =
+                        orderedAssigneeIds.FirstOrDefault() ?? "",
+
+                    // Shows ALL assignees
+                    AssignedToEmail =
+                        string.Join(", ", emails),
+
+                    CreatedByUserId = x.CreatedByUserId,
+                    CreatedByEmail =
+                        x.CreatedByEmail ?? "",
+
+                    Title = x.Title,
+                    Status = x.Status,
+
+                    CreatedAtUtc = DateTime.SpecifyKind(
+                        x.CreatedAtUtc,
+                        DateTimeKind.Utc),
+
+                    ClosedAtUtc = x.ClosedAtUtc.HasValue
+                        ? DateTime.SpecifyKind(
+                            x.ClosedAtUtc.Value,
+                            DateTimeKind.Utc)
+                        : null
+                };
+            })
+            .ToList();
 
         return Ok(new PagedResultDto<TicketListItemDto>
         {
@@ -143,23 +228,32 @@ public class TicketsController : ControllerBase
             Page = request.Page,
             PageSize = request.PageSize,
             TotalCount = totalCount,
+
             TotalPages = (int)Math.Ceiling(
                 totalCount / (double)request.PageSize)
         });
     }
 
+    // =========================================================
+    // MY OPEN TICKET COUNT
+    // =========================================================
+
     [HttpGet("my-open-count")]
     public async Task<ActionResult<int>> GetMyOpenCount(
         [FromQuery] int storeId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
         }
 
-        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                storeId);
 
         if (!hasAccess)
         {
@@ -167,27 +261,37 @@ public class TicketsController : ControllerBase
         }
 
         var count = await _db.OrderTickets
-    .AsNoTracking()
-    .CountAsync(x =>
-        x.StoreId == storeId &&
-        x.AssignedToUserId == userId &&
-        x.Status == TicketStatus.Open);
+            .AsNoTracking()
+            .CountAsync(x =>
+                x.StoreId == storeId &&
+                x.Assignees.Any(a =>
+                    a.UserId == userId) &&
+                x.Status == TicketStatus.Open);
 
         return Ok(count);
     }
 
+    // =========================================================
+    // ASSIGNABLE USERS
+    // =========================================================
+
     [HttpGet("assignable-users")]
-    public async Task<ActionResult<List<AssignableTicketUserDto>>> GetAssignableUsers(
-    [FromQuery] int storeId)
+    public async Task<ActionResult<List<AssignableTicketUserDto>>>
+        GetAssignableUsers(
+            [FromQuery] int storeId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
         }
 
-        var hasAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                storeId);
 
         if (!hasAccess)
         {
@@ -196,7 +300,8 @@ public class TicketsController : ControllerBase
 
         var users = await (
             from access in _db.UserStoreAccesses
-            join user in _db.Users on access.UserId equals user.Id
+            join user in _db.Users
+                on access.UserId equals user.Id
             where access.StoreId == storeId
             orderby user.Email
             select new
@@ -207,44 +312,52 @@ public class TicketsController : ControllerBase
             .AsNoTracking()
             .ToListAsync();
 
-        var result = new List<AssignableTicketUserDto>();
+        var result =
+            new List<AssignableTicketUserDto>();
 
         foreach (var user in users)
         {
             var roles = await (
                 from userRole in _db.UserRoles
-                join role in _db.Roles on userRole.RoleId equals role.Id
+                join role in _db.Roles
+                    on userRole.RoleId equals role.Id
                 where userRole.UserId == user.Id
                 select role.Name!)
                 .ToListAsync();
 
             var canReceiveTickets =
-    roles.Contains("Admin") ||
-    roles.Contains("CustomerSupport") ||
-    roles.Contains("WarehouseStaff");
+                roles.Contains("Admin") ||
+                roles.Contains("CustomerSupport") ||
+                roles.Contains("WarehouseStaff");
 
             if (!canReceiveTickets)
             {
                 continue;
             }
 
-            result.Add(new AssignableTicketUserDto
-            {
-                UserId = user.Id,
-                Email = user.Email,
-                Roles = roles
-            });
+            result.Add(
+                new AssignableTicketUserDto
+                {
+                    UserId = user.Id,
+                    Email = user.Email,
+                    Roles = roles
+                });
         }
 
         return Ok(result);
     }
 
+    // =========================================================
+    // CREATE TICKET FROM ORDER
+    // =========================================================
+
     [HttpPost("/api/orders/{orderId:int}/tickets")]
     public async Task<ActionResult> CreateTicket(
-    int orderId,
-    [FromBody] CreateTicketRequest request)
+        int orderId,
+        [FromBody] CreateTicketRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -252,18 +365,23 @@ public class TicketsController : ControllerBase
         }
 
         var canCreate =
-    User.IsInRole("Admin") ||
-    User.IsInRole("CustomerSupport") ||
-    User.IsInRole("WarehouseStaff");
+            User.IsInRole("Admin") ||
+            User.IsInRole("CustomerSupport") ||
+            User.IsInRole("WarehouseStaff");
 
         if (!canCreate)
         {
             return Forbid();
         }
 
-        if (string.IsNullOrWhiteSpace(request.AssignedToUserId))
+        var assignedUserIds =
+            NormalizeAssignedUserIds(
+                request.AssignedToUserIds);
+
+        if (assignedUserIds.Count == 0)
         {
-            return BadRequest("Assigned user is required.");
+            return BadRequest(
+                "At least one assigned user is required.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Title))
@@ -281,12 +399,14 @@ public class TicketsController : ControllerBase
 
         if (title.Length > 200)
         {
-            return BadRequest("Title cannot exceed 200 characters.");
+            return BadRequest(
+                "Title cannot exceed 200 characters.");
         }
 
         if (message.Length > 4000)
         {
-            return BadRequest("Message cannot exceed 4000 characters.");
+            return BadRequest(
+                "Message cannot exceed 4000 characters.");
         }
 
         var order = await _db.Orders
@@ -304,58 +424,51 @@ public class TicketsController : ControllerBase
             return NotFound("Order not found.");
         }
 
-        var hasStoreAccess = await _storeAccessService.HasAccessAsync(
-            userId,
-            order.StoreId);
+        var hasStoreAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                order.StoreId);
 
         if (!hasStoreAccess)
         {
             return Forbid();
         }
 
-        var assigneeHasStoreAccess = await _db.UserStoreAccesses
-            .AsNoTracking()
-            .AnyAsync(x =>
-                x.UserId == request.AssignedToUserId &&
-                x.StoreId == order.StoreId);
+        var assigneeValidationError =
+            await ValidateAssigneesAsync(
+                assignedUserIds,
+                order.StoreId);
 
-        if (!assigneeHasStoreAccess)
+        if (assigneeValidationError is not null)
         {
             return BadRequest(
-                "Assigned user does not have access to this order's store.");
-        }
-
-        var assigneeRoles = await (
-            from userRole in _db.UserRoles
-            join role in _db.Roles on userRole.RoleId equals role.Id
-            where userRole.UserId == request.AssignedToUserId
-            select role.Name!)
-            .ToListAsync();
-
-        var assigneeCanReceive =
-    assigneeRoles.Contains("Admin") ||
-    assigneeRoles.Contains("CustomerSupport") ||
-    assigneeRoles.Contains("WarehouseStaff");
-
-        if (!assigneeCanReceive)
-        {
-            return BadRequest(
-                "Selected user cannot receive order tickets.");
+                assigneeValidationError);
         }
 
         var ticket = new OrderTicket
         {
             StoreId = order.StoreId,
             OrderId = order.Id,
-            AssignedToUserId = request.AssignedToUserId,
+
             CreatedByUserId = userId,
+
             Title = title,
             Message = message,
+
             Status = TicketStatus.Open,
-            CreatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = DateTime.UtcNow,
+
+            Assignees = assignedUserIds
+                .Select(id =>
+                    new OrderTicketAssignee
+                    {
+                        UserId = id
+                    })
+                .ToList()
         };
 
         _db.OrderTickets.Add(ticket);
+
         await _db.SaveChangesAsync();
 
         return Ok(new
@@ -364,10 +477,16 @@ public class TicketsController : ControllerBase
         });
     }
 
+    // =========================================================
+    // GET SINGLE TICKET
+    // =========================================================
+
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<TicketDetailsDto>> GetTicket(int id)
+    public async Task<ActionResult<TicketDetailsDto>>
+        GetTicket(int id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -376,23 +495,19 @@ public class TicketsController : ControllerBase
 
         var ticket = await _db.OrderTickets
             .AsNoTracking()
-            .Where(x => x.Id == id)
-            .Select(x => new
-            {
-                Ticket = x,
-                StoreId = x.StoreId,
-                DisplayOrderId = x.Order != null ? x.Order.DisplayOrderId : null
-            })
-            .FirstOrDefaultAsync();
+            .Include(x => x.Order)
+            .Include(x => x.Assignees)
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (ticket is null)
         {
             return NotFound("Ticket not found.");
         }
 
-        var hasAccess = await _storeAccessService.HasAccessAsync(
-            userId,
-            ticket.StoreId);
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                ticket.StoreId);
 
         if (!hasAccess)
         {
@@ -402,63 +517,107 @@ public class TicketsController : ControllerBase
         var isAdmin = User.IsInRole("Admin");
 
         if (!isAdmin &&
-    ticket.Ticket.AssignedToUserId != userId &&
-    ticket.Ticket.CreatedByUserId != userId)
+            !ticket.Assignees.Any(
+                a => a.UserId == userId) &&
+            ticket.CreatedByUserId != userId)
         {
             return Forbid();
         }
 
+        var assignedUserIds = ticket.Assignees
+            .Select(x => x.UserId)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
+        var assignedEmails = await _db.Users
+            .AsNoTracking()
+            .Where(x =>
+                assignedUserIds.Contains(x.Id))
+            .Select(x => x.Email ?? "")
+            .Where(x => x != "")
+            .ToListAsync();
+
+        var createdByEmail = await _db.Users
+            .AsNoTracking()
+            .Where(x =>
+                x.Id == ticket.CreatedByUserId)
+            .Select(x => x.Email ?? "")
+            .FirstOrDefaultAsync() ?? "";
+
         var result = new TicketDetailsDto
         {
-            Id = ticket.Ticket.Id,
+            Id = ticket.Id,
 
-            OrderId = ticket.Ticket.OrderId,
-            DisplayOrderId = ticket.DisplayOrderId,
+            OrderId = ticket.OrderId,
 
-            AssignedToUserId = ticket.Ticket.AssignedToUserId,
-            AssignedToEmail = await _db.Users
-                .Where(x => x.Id == ticket.Ticket.AssignedToUserId)
-                .Select(x => x.Email ?? "")
-                .FirstOrDefaultAsync() ?? "",
+            DisplayOrderId =
+                ticket.Order != null
+                    ? ticket.Order.DisplayOrderId
+                    : null,
 
-            CreatedByUserId = ticket.Ticket.CreatedByUserId,
-            CreatedByEmail = await _db.Users
-                .Where(x => x.Id == ticket.Ticket.CreatedByUserId)
-                .Select(x => x.Email ?? "")
-                .FirstOrDefaultAsync() ?? "",
+            /*
+             * Backward compatibility:
+             * keep existing DTO fields for now.
+             */
+            AssignedToUserId =
+                assignedUserIds.FirstOrDefault() ?? "",
 
-            ClosedByUserId = ticket.Ticket.ClosedByUserId,
+            AssignedToEmail =
+                string.Join(", ", assignedEmails),
 
-            Title = ticket.Ticket.Title,
-            Message = ticket.Ticket.Message,
+            CreatedByUserId =
+                ticket.CreatedByUserId,
 
-            Status = ticket.Ticket.Status,
+            CreatedByEmail =
+                createdByEmail,
+
+            ClosedByUserId =
+                ticket.ClosedByUserId,
+
+            Title = ticket.Title,
+            Message = ticket.Message,
+
+            Status = ticket.Status,
+
             CreatedAtUtc = DateTime.SpecifyKind(
-    ticket.Ticket.CreatedAtUtc,
-    DateTimeKind.Utc),
+                ticket.CreatedAtUtc,
+                DateTimeKind.Utc),
 
-            ClosedAtUtc = ticket.Ticket.ClosedAtUtc.HasValue
-    ? DateTime.SpecifyKind(
-        ticket.Ticket.ClosedAtUtc.Value,
-        DateTimeKind.Utc)
-    : null
+            ClosedAtUtc =
+                ticket.ClosedAtUtc.HasValue
+                    ? DateTime.SpecifyKind(
+                        ticket.ClosedAtUtc.Value,
+                        DateTimeKind.Utc)
+                    : null
         };
 
-        if (!string.IsNullOrWhiteSpace(ticket.Ticket.ClosedByUserId))
+        if (!string.IsNullOrWhiteSpace(
+                ticket.ClosedByUserId))
         {
-            result.ClosedByEmail = await _db.Users
-                .Where(x => x.Id == ticket.Ticket.ClosedByUserId)
-                .Select(x => x.Email ?? "")
-                .FirstOrDefaultAsync();
+            result.ClosedByEmail =
+                await _db.Users
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.Id == ticket.ClosedByUserId)
+                    .Select(x =>
+                        x.Email ?? "")
+                    .FirstOrDefaultAsync();
         }
 
         return Ok(result);
     }
 
+    // =========================================================
+    // CLOSE TICKET
+    // =========================================================
+
     [HttpPost("{id:int}/close")]
-    public async Task<ActionResult> CloseTicket(int id)
+    public async Task<ActionResult> CloseTicket(
+        int id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -467,16 +626,19 @@ public class TicketsController : ControllerBase
 
         var ticket = await _db.OrderTickets
             .Include(x => x.Order)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .Include(x => x.Assignees)
+            .FirstOrDefaultAsync(
+                x => x.Id == id);
 
         if (ticket is null)
         {
             return NotFound("Ticket not found.");
         }
 
-        var hasAccess = await _storeAccessService.HasAccessAsync(
-    userId,
-    ticket.StoreId);
+        var hasAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                ticket.StoreId);
 
         if (!hasAccess)
         {
@@ -485,33 +647,50 @@ public class TicketsController : ControllerBase
 
         var isAdmin = User.IsInRole("Admin");
 
+        /*
+         * Same permission rule as before,
+         * except ANY assignee can now close it.
+         */
         if (!isAdmin &&
-            ticket.AssignedToUserId != userId &&
+            !ticket.Assignees.Any(
+                x => x.UserId == userId) &&
             ticket.CreatedByUserId != userId)
         {
             return Forbid();
         }
 
-        if (ticket.Status == TicketStatus.Closed)
+        if (ticket.Status ==
+            TicketStatus.Closed)
         {
-            return BadRequest("Ticket is already closed.");
+            return BadRequest(
+                "Ticket is already closed.");
         }
 
-        ticket.Status = TicketStatus.Closed;
-        ticket.ClosedAtUtc = DateTime.UtcNow;
-        ticket.ClosedByUserId = userId;
+        ticket.Status =
+            TicketStatus.Closed;
+
+        ticket.ClosedAtUtc =
+            DateTime.UtcNow;
+
+        ticket.ClosedByUserId =
+            userId;
 
         await _db.SaveChangesAsync();
 
         return Ok();
     }
 
+    // =========================================================
+    // UPDATE / REASSIGN TICKET
+    // =========================================================
+
     [HttpPatch("{id:int}/assignment")]
     public async Task<ActionResult> UpdateAssignment(
-    int id,
-    [FromBody] UpdateTicketAssignmentRequest request)
+        int id,
+        [FromBody] UpdateTicketAssignmentRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -523,77 +702,111 @@ public class TicketsController : ControllerBase
             return Forbid();
         }
 
-        if (string.IsNullOrWhiteSpace(request.AssignedToUserId))
+        var assignedUserIds =
+            NormalizeAssignedUserIds(
+                request.AssignedToUserIds);
+
+        if (assignedUserIds.Count == 0)
         {
-            return BadRequest("Assigned user is required.");
+            return BadRequest(
+                "At least one assigned user is required.");
         }
 
         var ticket = await _db.OrderTickets
             .Include(x => x.Order)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .Include(x => x.Assignees)
+            .FirstOrDefaultAsync(
+                x => x.Id == id);
 
         if (ticket is null)
         {
             return NotFound("Ticket not found.");
         }
 
-        if (ticket.Status == TicketStatus.Closed)
+        if (ticket.Status ==
+            TicketStatus.Closed)
         {
-            return BadRequest("Closed tickets cannot be reassigned.");
+            return BadRequest(
+                "Closed tickets cannot be reassigned.");
         }
 
-        var hasStoreAccess = await _storeAccessService.HasAccessAsync(
-    userId,
-    ticket.StoreId);
+        var hasStoreAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                ticket.StoreId);
 
         if (!hasStoreAccess)
         {
             return Forbid();
         }
 
-        var assigneeHasStoreAccess = await _db.UserStoreAccesses
-            .AsNoTracking()
-            .AnyAsync(x =>
-                x.UserId == request.AssignedToUserId &&
-                x.StoreId == ticket.StoreId);
+        var assigneeValidationError =
+            await ValidateAssigneesAsync(
+                assignedUserIds,
+                ticket.StoreId);
 
-        if (!assigneeHasStoreAccess)
+        if (assigneeValidationError is not null)
         {
             return BadRequest(
-                "Assigned user does not have access to this ticket's store.");
+                assigneeValidationError);
         }
 
-        var assigneeRoles = await (
-            from userRole in _db.UserRoles
-            join role in _db.Roles on userRole.RoleId equals role.Id
-            where userRole.UserId == request.AssignedToUserId
-            select role.Name!)
-            .ToListAsync();
+        var existingIds = ticket.Assignees
+            .Select(x => x.UserId)
+            .ToHashSet();
 
-        var assigneeCanReceive =
-            assigneeRoles.Contains("Admin") ||
-            assigneeRoles.Contains("CustomerSupport") ||
-            assigneeRoles.Contains("WarehouseStaff");
+        /*
+         * Remove users who are no longer selected.
+         */
+        var assigneesToRemove =
+            ticket.Assignees
+                .Where(x =>
+                    !assignedUserIds.Contains(
+                        x.UserId))
+                .ToList();
 
-        if (!assigneeCanReceive)
+        _db.OrderTicketAssignees
+            .RemoveRange(assigneesToRemove);
+
+        /*
+         * Add newly selected users.
+         */
+        var assigneesToAdd =
+            assignedUserIds
+                .Where(id =>
+                    !existingIds.Contains(id))
+                .Select(id =>
+                    new OrderTicketAssignee
+                    {
+                        OrderTicketId = ticket.Id,
+                        UserId = id
+                    })
+                .ToList();
+
+        if (assigneesToAdd.Count > 0)
         {
-            return BadRequest(
-                "Selected user cannot receive order tickets.");
+            _db.OrderTicketAssignees
+                .AddRange(assigneesToAdd);
         }
-
-        ticket.AssignedToUserId = request.AssignedToUserId;
 
         await _db.SaveChangesAsync();
 
         return Ok();
     }
 
+    // =========================================================
+    // CREATE TICKET FROM TICKETS PAGE
+    // =========================================================
+
     [HttpPost]
-    public async Task<ActionResult> CreateTicketFromPage(
-    [FromQuery] int storeId,
-    [FromBody] CreateTicketFromPageRequest request)
+    public async Task<ActionResult>
+        CreateTicketFromPage(
+            [FromQuery] int storeId,
+            [FromBody]
+            CreateTicketFromPageRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -610,83 +823,85 @@ public class TicketsController : ControllerBase
             return Forbid();
         }
 
-        var hasStoreAccess = await _storeAccessService.HasAccessAsync(userId, storeId);
+        var hasStoreAccess =
+            await _storeAccessService.HasAccessAsync(
+                userId,
+                storeId);
 
         if (!hasStoreAccess)
         {
             return Forbid();
         }
 
-        if (string.IsNullOrWhiteSpace(request.AssignedToUserId))
+        var assignedUserIds =
+            NormalizeAssignedUserIds(
+                request.AssignedToUserIds);
+
+        if (assignedUserIds.Count == 0)
         {
-            return BadRequest("Assigned user is required.");
+            return BadRequest(
+                "At least one assigned user is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.Title))
+        if (string.IsNullOrWhiteSpace(
+                request.Title))
         {
-            return BadRequest("Title is required.");
+            return BadRequest(
+                "Title is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.Message))
+        if (string.IsNullOrWhiteSpace(
+                request.Message))
         {
-            return BadRequest("Message is required.");
+            return BadRequest(
+                "Message is required.");
         }
 
-        var title = request.Title.Trim();
-        var message = request.Message.Trim();
+        var title =
+            request.Title.Trim();
+
+        var message =
+            request.Message.Trim();
 
         if (title.Length > 200)
         {
-            return BadRequest("Title cannot exceed 200 characters.");
+            return BadRequest(
+                "Title cannot exceed 200 characters.");
         }
 
         if (message.Length > 4000)
         {
-            return BadRequest("Message cannot exceed 4000 characters.");
+            return BadRequest(
+                "Message cannot exceed 4000 characters.");
         }
 
-        var assigneeHasStoreAccess = await _db.UserStoreAccesses
-            .AsNoTracking()
-            .AnyAsync(x =>
-                x.UserId == request.AssignedToUserId &&
-                x.StoreId == storeId);
+        var assigneeValidationError =
+            await ValidateAssigneesAsync(
+                assignedUserIds,
+                storeId);
 
-        if (!assigneeHasStoreAccess)
+        if (assigneeValidationError is not null)
         {
             return BadRequest(
-                "Assigned user does not have access to this store.");
-        }
-
-        var assigneeRoles = await (
-            from userRole in _db.UserRoles
-            join role in _db.Roles on userRole.RoleId equals role.Id
-            where userRole.UserId == request.AssignedToUserId
-            select role.Name!)
-            .ToListAsync();
-
-        var assigneeCanReceive =
-            assigneeRoles.Contains("Admin") ||
-            assigneeRoles.Contains("CustomerSupport") ||
-            assigneeRoles.Contains("WarehouseStaff");
-
-        if (!assigneeCanReceive)
-        {
-            return BadRequest(
-                "Selected user cannot receive order tickets.");
+                assigneeValidationError);
         }
 
         int? orderId = null;
 
-        if (!string.IsNullOrWhiteSpace(request.DisplayOrderId))
+        if (!string.IsNullOrWhiteSpace(
+                request.DisplayOrderId))
         {
-            var displayOrderId = request.DisplayOrderId.Trim();
+            var displayOrderId =
+                request.DisplayOrderId.Trim();
 
             orderId = await _db.Orders
                 .AsNoTracking()
                 .Where(x =>
                     x.StoreId == storeId &&
-                    x.DisplayOrderId == displayOrderId)
-                .Select(x => (int?)x.Id)
+                    x.DisplayOrderId ==
+                        displayOrderId)
+                .Select(x =>
+                    (int?)x.Id)
                 .FirstOrDefaultAsync();
 
             if (!orderId.HasValue)
@@ -700,20 +915,127 @@ public class TicketsController : ControllerBase
         {
             StoreId = storeId,
             OrderId = orderId,
-            AssignedToUserId = request.AssignedToUserId,
-            CreatedByUserId = userId,
+
+            CreatedByUserId =
+                userId,
+
             Title = title,
             Message = message,
-            Status = TicketStatus.Open,
-            CreatedAtUtc = DateTime.UtcNow
+
+            Status =
+                TicketStatus.Open,
+
+            CreatedAtUtc =
+                DateTime.UtcNow,
+
+            Assignees =
+                assignedUserIds
+                    .Select(id =>
+                        new OrderTicketAssignee
+                        {
+                            UserId = id
+                        })
+                    .ToList()
         };
 
         _db.OrderTickets.Add(ticket);
+
         await _db.SaveChangesAsync();
 
         return Ok(new
         {
             ticket.Id
         });
+    }
+
+    // =========================================================
+    // PRIVATE HELPERS
+    // =========================================================
+
+    private static List<string>
+        NormalizeAssignedUserIds(
+            IEnumerable<string>? userIds)
+    {
+        if (userIds is null)
+        {
+            return [];
+        }
+
+        return userIds
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct()
+            .ToList();
+    }
+
+    private async Task<string?>
+        ValidateAssigneesAsync(
+            List<string> assignedUserIds,
+            int storeId)
+    {
+        /*
+         * Make sure EVERY selected user
+         * has access to this store.
+         */
+        var usersWithStoreAccess =
+            await _db.UserStoreAccesses
+                .AsNoTracking()
+                .Where(x =>
+                    x.StoreId == storeId &&
+                    assignedUserIds.Contains(
+                        x.UserId))
+                .Select(x => x.UserId)
+                .Distinct()
+                .ToListAsync();
+
+        if (usersWithStoreAccess.Count !=
+            assignedUserIds.Count)
+        {
+            return
+                "One or more selected users do not have access to this store.";
+        }
+
+        /*
+         * Same roles that were allowed before:
+         *
+         * Admin
+         * CustomerSupport
+         * WarehouseStaff
+         */
+        string[] allowedRoles =
+        [
+            "Admin",
+            "CustomerSupport",
+            "WarehouseStaff"
+        ];
+
+        var usersWithAllowedRole =
+            await (
+                from userRole in _db.UserRoles
+                join role in _db.Roles
+                    on userRole.RoleId
+                    equals role.Id
+
+                where
+                    assignedUserIds.Contains(
+                        userRole.UserId) &&
+                    role.Name != null &&
+                    allowedRoles.Contains(
+                        role.Name)
+
+                select userRole.UserId
+            )
+            .Distinct()
+            .ToListAsync();
+
+        if (usersWithAllowedRole.Count !=
+            assignedUserIds.Count)
+        {
+            return
+                "One or more selected users cannot receive order tickets.";
+        }
+
+        return null;
     }
 }

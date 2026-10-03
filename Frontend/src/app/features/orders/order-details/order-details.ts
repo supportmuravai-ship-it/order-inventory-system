@@ -66,7 +66,7 @@ readonly cancellationEvidenceUrl = signal('');
 readonly mobileMenuOpen = signal(false);
 readonly openTicketCount = signal(0);
 
-ticketAssignedToUserId = '';
+ticketAssignedToUserIds: string[] = [];
 ticketTitle = '';
 ticketMessage = '';
 
@@ -554,7 +554,7 @@ openCreateTicket(): void {
     return;
   }
 
-  this.ticketAssignedToUserId = '';
+  this.ticketAssignedToUserIds = [];
   this.ticketTitle = '';
   this.ticketMessage = '';
 
@@ -589,18 +589,18 @@ createTicket(): void {
   }
 
   if (
-    !this.ticketAssignedToUserId ||
-    !this.ticketTitle.trim() ||
-    !this.ticketMessage.trim()
-  ) {
-    return;
-  }
+  this.ticketAssignedToUserIds.length === 0 ||
+  !this.ticketTitle.trim() ||
+  !this.ticketMessage.trim()
+) {
+  return;
+}
 
   this.creatingTicket.set(true);
 
   this.ticketService
   .createTicket(order.id, {
-    assignedToUserId: this.ticketAssignedToUserId,
+    assignedToUserIds: this.ticketAssignedToUserIds,
     title: this.ticketTitle.trim(),
     message: this.ticketMessage.trim(),
   })
@@ -683,5 +683,26 @@ logout(): void {
       this.router.navigate(['/login']);
     },
   });
+}
+
+toggleTicketAssignee(
+  userId: string,
+  checked: boolean,
+): void {
+  if (checked) {
+    if (!this.ticketAssignedToUserIds.includes(userId)) {
+      this.ticketAssignedToUserIds = [
+        ...this.ticketAssignedToUserIds,
+        userId,
+      ];
+    }
+
+    return;
+  }
+
+  this.ticketAssignedToUserIds =
+    this.ticketAssignedToUserIds.filter(
+      id => id !== userId,
+    );
 }
 }
