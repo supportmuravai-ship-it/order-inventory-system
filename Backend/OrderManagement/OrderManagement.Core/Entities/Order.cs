@@ -39,7 +39,7 @@ public class Order
 
     public DateTime LastStatusChangedAtUtc { get; set; }
 
-    public DateTime CreatedAtUtc { get; set; }
+    public DateTime CreatedAtUtc { get; set; } // The time at which the order is added into the software
 
     public DateTime UpdatedAtUtc { get; set; }
 

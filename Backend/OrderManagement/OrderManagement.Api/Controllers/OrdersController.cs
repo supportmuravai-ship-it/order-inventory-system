@@ -249,6 +249,8 @@ public class OrdersController : ControllerBase
                     DisplayOrderId = x.DisplayOrderId,
                     OrderDateUtc = x.OrderDateUtc,
 
+                    CreatedAtUtc = x.CreatedAtUtc,
+
                     FullName = x.Customer.FullName,
                     Phone = x.Customer.Phone,
                     AddressLine1 = x.Customer.AddressLine1,
@@ -483,6 +485,8 @@ public class OrdersController : ControllerBase
                 ExternalOrderId = x.ExternalOrderId,
 
                 OrderDateUtc = x.OrderDateUtc,
+
+                CreatedAtUtc = x.CreatedAtUtc,
 
                 FullName = x.Customer.FullName,
 

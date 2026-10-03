@@ -13,6 +13,8 @@ export interface OrderListItem {
   displayOrderId: string;
   orderDateUtc: string;
 
+  createdAtUtc: string;
+
   fullName: string;
   phone: string;
   addressLine1: string;
@@ -63,6 +65,7 @@ export interface OrderDetails {
   displayOrderId: string;
   externalOrderId: string | null;
   orderDateUtc: string;
+  createdAtUtc: string;
 
   fullName: string;
   phone: string;

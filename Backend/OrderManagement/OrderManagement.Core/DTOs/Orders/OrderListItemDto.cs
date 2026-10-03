@@ -42,6 +42,8 @@ public class OrderListItemDto
 
     public string? AirwayBillUrl { get; set; }
     public double HoursInCurrentStatus { get; set; }
+
+    public DateTime CreatedAtUtc { get; set; }
     public List<OrderItemDto> Items { get; set; } = [];
 
     public bool NeedToShip { get; set; }
