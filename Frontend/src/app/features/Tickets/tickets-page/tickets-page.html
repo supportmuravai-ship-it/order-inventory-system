@@ -1,364 +1,360 @@
 <div class="min-h-screen bg-gray-100">
   <header class="border-b bg-white">
-  <div class="flex items-center justify-between px-4 py-4 lg:px-6">
-    <div class="flex items-center gap-6">
-      <button
-        type="button"
-        (click)="openMobileMenu()"
-        class="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50 lg:hidden"
-        aria-label="Open navigation"
-      >
-        ☰
-      </button>
+    <div class="flex items-center justify-between px-4 py-4 lg:px-6">
+      <div class="flex items-center gap-6">
+        <button
+          type="button"
+          (click)="openMobileMenu()"
+          class="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50 lg:hidden"
+          aria-label="Open navigation"
+        >
+          ☰
+        </button>
 
-      <div class="text-xl font-bold tracking-wide">
-        SQUAD<span class="text-blue-600">21</span>
-      </div>
-    </div>
-
-    <div class="hidden text-lg font-semibold text-gray-900 md:block">
-      Order Management
-      <span class="text-blue-600">
-        - {{ authService.selectedStore()?.name }}
-      </span>
-    </div>
-
-    <button
-      type="button"
-      (click)="backToOrders()"
-      class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-    >
-      Back to Orders
-    </button>
-  </div>
-</header>
-
-@if (mobileMenuOpen()) {
-  <div
-    class="fixed inset-0 z-40 bg-black/40 lg:hidden"
-    (click)="closeMobileMenu()"
-  ></div>
-
-  <aside
-    class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 p-4 shadow-xl lg:hidden"
-  >
-    <div class="mb-6 flex items-center justify-between">
-      <div class="text-lg font-bold text-white">
-        SQUAD<span class="text-blue-400">21</span>
+        <div class="text-xl font-bold tracking-wide">
+          SQUAD<span class="text-blue-600">21</span>
+        </div>
       </div>
 
-      <button
-        type="button"
-        (click)="closeMobileMenu()"
-        class="rounded-lg px-3 py-2 text-xl text-gray-300 hover:bg-slate-800"
-        aria-label="Close navigation"
-      >
-        ×
-      </button>
-    </div>
-
-    <div class="space-y-2">
-
-      @if (isAdmin) {
-  <button
-    type="button"
-    (click)="openAdminDashboard(); closeMobileMenu()"
-    class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-  >
-    Admin Dashboard
-  </button>
-}
-
-      <button
-        type="button"
-        (click)="backToOrders(); closeMobileMenu()"
-        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-      >
-        All Orders
-      </button>
-
-      <button
-        type="button"
-        (click)="openTickets(); closeMobileMenu()"
-        class="flex w-full items-center justify-between rounded-lg bg-blue-600 px-4 py-3 text-left text-sm font-medium text-white"
-      >
-        <span>Tickets</span>
-
-        @if (openTicketCount() > 0) {
-          <span
-            class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
-          >
-            {{ openTicketCount() }}
-          </span>
-        }
-      </button>
-
-      <button
-        type="button"
-        (click)="openCreateOrder(); closeMobileMenu()"
-        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-      >
-        Add Order
-      </button>
-
-      <button
-        type="button"
-        (click)="openImportOrders(); closeMobileMenu()"
-        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-      >
-        Import Orders
-      </button>
-    </div>
-  </aside>
-}
-
-  <div class="flex">
-  <aside class="hidden min-h-[calc(100vh-73px)] w-60 bg-slate-900 p-4 lg:block">
-    <div class="mb-6 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white">
-      Orders
-    </div>
-
-    <div class="space-y-2">
-      @if (isAdmin) {
-  <button
-    type="button"
-    (click)="openAdminDashboard()"
-    class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-  >
-    Admin Dashboard
-  </button>
-}
+      <div class="hidden text-lg font-semibold text-gray-900 md:block">
+        Order Management
+        <span class="text-blue-600"> - {{ authService.selectedStore()?.name }} </span>
+      </div>
 
       <button
         type="button"
         (click)="backToOrders()"
-        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
       >
-        All Orders
-      </button>
-
-      <button
-        type="button"
-        (click)="openTickets()"
-        class="flex w-full items-center justify-between rounded-lg bg-slate-800 px-4 py-3 text-left text-sm font-medium text-white"
-      >
-        <span>Tickets</span>
-
-        @if (openTicketCount() > 0) {
-          <span
-            class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
-          >
-            {{ openTicketCount() }}
-          </span>
-        }
-      </button>
-
-      <button
-        type="button"
-        (click)="openCreateOrder()"
-        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-      >
-        Add Order
-      </button>
-
-      <button
-        type="button"
-        (click)="openImportOrders()"
-        class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
-      >
-        Import Orders
+        Back to Orders
       </button>
     </div>
-  </aside>
+  </header>
 
-  <main class="min-w-0 flex-1 p-4 md:p-6">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Tickets</h1>
-        <p class="mt-1 text-sm text-gray-500">
-          {{ totalCount() }} ticket{{ totalCount() === 1 ? '' : 's' }}
-        </p>
-      </div>
+  @if (mobileMenuOpen()) {
+    <div class="fixed inset-0 z-40 bg-black/40 lg:hidden" (click)="closeMobileMenu()"></div>
 
-      <select
-        [(ngModel)]="statusFilter"
-        (ngModelChange)="changeStatusFilter()"
-        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-      >
-        <option value="">All Tickets</option>
-        <option [ngValue]="TicketStatus.Open">Open</option>
-        <option [ngValue]="TicketStatus.Closed">Closed</option>
-      </select>
-    </div>
-
-    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-      <div class="flex flex-1 gap-2">
-        <input
-          type="text"
-          [(ngModel)]="searchValue"
-          (keyup.enter)="searchTickets()"
-          placeholder="Search title or Order ID"
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
+    <aside class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 p-4 shadow-xl lg:hidden">
+      <div class="mb-6 flex items-center justify-between">
+        <div class="text-lg font-bold text-white">SQUAD<span class="text-blue-400">21</span></div>
 
         <button
           type="button"
-          (click)="searchTickets()"
-          class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white"
+          (click)="closeMobileMenu()"
+          class="rounded-lg px-3 py-2 text-xl text-gray-300 hover:bg-slate-800"
+          aria-label="Close navigation"
         >
-          Search
+          ×
         </button>
+      </div>
 
-        @if (searchValue) {
-          <button type="button" (click)="clearSearch()" class="rounded-lg border px-4 py-2 text-sm">
-            Clear
+      <div class="space-y-2">
+        @if (isAdmin) {
+          <button
+            type="button"
+            (click)="openAdminDashboard(); closeMobileMenu()"
+            class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+          >
+            Admin Dashboard
           </button>
         }
-      </div>
 
-      @if (isAdmin) {
+        <button
+          type="button"
+          (click)="backToOrders(); closeMobileMenu()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          All Orders
+        </button>
+
+        <button
+          type="button"
+          (click)="openTickets(); closeMobileMenu()"
+          class="flex w-full items-center justify-between rounded-lg bg-blue-600 px-4 py-3 text-left text-sm font-medium text-white"
+        >
+          <span>Tickets</span>
+
+          @if (openTicketCount() > 0) {
+            <span
+              class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
+            >
+              {{ openTicketCount() }}
+            </span>
+          }
+        </button>
+
+        <button
+          type="button"
+          (click)="openCreateOrder(); closeMobileMenu()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          Add Order
+        </button>
+
+        <button
+          type="button"
+          (click)="openImportOrders(); closeMobileMenu()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          Import Orders
+        </button>
+      </div>
+    </aside>
+  }
+
+  <div class="flex">
+    <aside class="hidden min-h-[calc(100vh-73px)] w-60 bg-slate-900 p-4 lg:block">
+      <div class="mb-6 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white">Orders</div>
+
+      <div class="space-y-2">
+        @if (isAdmin) {
+          <button
+            type="button"
+            (click)="openAdminDashboard()"
+            class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+          >
+            Admin Dashboard
+          </button>
+        }
+
+        <button
+          type="button"
+          (click)="backToOrders()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          All Orders
+        </button>
+
+        <button
+          type="button"
+          (click)="openTickets()"
+          class="flex w-full items-center justify-between rounded-lg bg-slate-800 px-4 py-3 text-left text-sm font-medium text-white"
+        >
+          <span>Tickets</span>
+
+          @if (openTicketCount() > 0) {
+            <span
+              class="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-semibold text-white"
+            >
+              {{ openTicketCount() }}
+            </span>
+          }
+        </button>
+
+        <button
+          type="button"
+          (click)="openCreateOrder()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          Add Order
+        </button>
+
+        <button
+          type="button"
+          (click)="openImportOrders()"
+          class="w-full rounded-lg px-4 py-3 text-left text-sm text-gray-300 hover:bg-slate-800 hover:text-white"
+        >
+          Import Orders
+        </button>
+      </div>
+    </aside>
+
+    <main class="min-w-0 flex-1 p-4 md:p-6">
+      <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Tickets</h1>
+          <p class="mt-1 text-sm text-gray-500">
+            {{ totalCount() }} ticket{{ totalCount() === 1 ? '' : 's' }}
+          </p>
+        </div>
+
         <select
-          [(ngModel)]="assignedUserFilter"
-          (ngModelChange)="changeAssignedUserFilter()"
+          [(ngModel)]="statusFilter"
+          (ngModelChange)="changeStatusFilter()"
           class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
         >
-          <option value="">All Users</option>
-
-          @for (user of assignableUsers(); track user.userId) {
-            <option [value]="user.userId">
-              {{ user.email }}
-            </option>
-          }
+          <option value="">All Tickets</option>
+          <option [ngValue]="TicketStatus.Open">Open</option>
+          <option [ngValue]="TicketStatus.Closed">Closed</option>
         </select>
+      </div>
+
+      <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div class="flex flex-1 gap-2">
+          <input
+            type="text"
+            [(ngModel)]="searchValue"
+            (keyup.enter)="searchTickets()"
+            placeholder="Search title or Order ID"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+
+          <button
+            type="button"
+            (click)="searchTickets()"
+            class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white"
+          >
+            Search
+          </button>
+
+          @if (searchValue) {
+            <button
+              type="button"
+              (click)="clearSearch()"
+              class="rounded-lg border px-4 py-2 text-sm"
+            >
+              Clear
+            </button>
+          }
+        </div>
+
+        @if (isAdmin) {
+          <select
+            [(ngModel)]="assignedUserFilter"
+            (ngModelChange)="changeAssignedUserFilter()"
+            class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+          >
+            <option value="">All Users</option>
+
+            @for (user of assignableUsers(); track user.userId) {
+              <option [value]="user.userId">
+                {{ user.email }}
+              </option>
+            }
+          </select>
+        }
+
+        <button
+          type="button"
+          (click)="openCreateTicket()"
+          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Create Ticket
+        </button>
+      </div>
+
+      @if (successMessage()) {
+        <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+          {{ successMessage() }}
+        </div>
       }
 
-      <button
-        type="button"
-        (click)="openCreateTicket()"
-        class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        Create Ticket
-      </button>
-    </div>
-
-    @if (successMessage()) {
-      <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-        {{ successMessage() }}
-      </div>
-    }
-
-    @if (errorMessage()) {
-      <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-        {{ errorMessage() }}
-      </div>
-    }
-
-    @if (loading()) {
-      <div class="rounded-xl border bg-white p-8 text-center text-gray-500">Loading tickets...</div>
-    } @else if (tickets().length === 0) {
-      <div class="rounded-xl border bg-white p-8 text-center text-gray-500">No tickets found.</div>
-    } @else {
-      <div class="overflow-x-auto rounded-xl border bg-white">
-        <table class="min-w-full text-left text-sm">
-          <thead class="border-b bg-gray-50 text-xs uppercase text-gray-500">
-            <tr>
-              <th class="px-4 py-3">Title</th>
-              <th class="px-4 py-3">Order</th>
-              <th class="px-4 py-3">Assigned To</th>
-              <th class="px-4 py-3">Created By</th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Created At</th>
-              <th class="px-4 py-3">Closed At</th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y">
-            @for (ticket of tickets(); track ticket.id) {
-              <tr (click)="openTicket(ticket.id)" class="cursor-pointer hover:bg-gray-50">
-                <td class="px-4 py-3 font-medium text-gray-900">
-                  {{ ticket.title }}
-                </td>
-
-                <td class="px-4 py-3">
-                  @if (ticket.orderId && ticket.displayOrderId) {
-                    <button
-                      type="button"
-                      (click)="openOrder(ticket.orderId); $event.stopPropagation()"
-                      class="font-medium text-blue-600 hover:underline"
-                    >
-                      {{ ticket.displayOrderId }}
-                    </button>
-                  } @else {
-                    <span class="text-gray-400">—</span>
-                  }
-                </td>
-
-                <td class="px-4 py-3">
-                  {{ ticket.assignedToEmail }}
-                </td>
-
-                <td class="px-4 py-3">
-                  {{ ticket.createdByEmail }}
-                </td>
-
-                <td class="px-4 py-3">
-                  <span
-                    class="rounded-full px-2.5 py-1 text-xs font-semibold"
-                    [ngClass]="
-                      ticket.status === TicketStatus.Open
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-green-100 text-green-800'
-                    "
-                  >
-                    {{ getStatusLabel(ticket.status) }}
-                  </span>
-                </td>
-
-                <td class="whitespace-nowrap px-4 py-3">
-                  {{ ticket.createdAtUtc | date: 'medium' }}
-                </td>
-
-                <td class="whitespace-nowrap px-4 py-3">
-                  @if (ticket.closedAtUtc) {
-                    {{ ticket.closedAtUtc | date: 'medium' }}
-                  } @else {
-                    —
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mt-4 flex items-center justify-between">
-        <span class="text-sm text-gray-500"> Page {{ page }} of {{ totalPages() }} </span>
-
-        <div class="flex gap-2">
-          <button
-            type="button"
-            (click)="previousPage()"
-            [disabled]="page <= 1"
-            class="rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Previous
-          </button>
-
-          <button
-            type="button"
-            (click)="nextPage()"
-            [disabled]="page >= totalPages()"
-            class="rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Next
-          </button>
+      @if (errorMessage()) {
+        <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ errorMessage() }}
         </div>
-      </div>
-    }
-    </main>
-</div>
+      }
 
-@if (loadingDetails()) {
+      @if (loading()) {
+        <div class="rounded-xl border bg-white p-8 text-center text-gray-500">
+          Loading tickets...
+        </div>
+      } @else if (tickets().length === 0) {
+        <div class="rounded-xl border bg-white p-8 text-center text-gray-500">
+          No tickets found.
+        </div>
+      } @else {
+        <div class="overflow-x-auto rounded-xl border bg-white">
+          <table class="min-w-full text-left text-sm">
+            <thead class="border-b bg-gray-50 text-xs uppercase text-gray-500">
+              <tr>
+                <th class="px-4 py-3">Title</th>
+                <th class="px-4 py-3">Order</th>
+                <th class="px-4 py-3">Assigned To</th>
+                <th class="px-4 py-3">Created By</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Created At</th>
+                <th class="px-4 py-3">Closed At</th>
+              </tr>
+            </thead>
+
+            <tbody class="divide-y">
+              @for (ticket of tickets(); track ticket.id) {
+                <tr (click)="openTicket(ticket.id)" class="cursor-pointer hover:bg-gray-50">
+                  <td class="px-4 py-3 font-medium text-gray-900">
+                    {{ ticket.title }}
+                  </td>
+
+                  <td class="px-4 py-3">
+                    @if (ticket.orderId && ticket.displayOrderId) {
+                      <button
+                        type="button"
+                        (click)="openOrder(ticket.orderId); $event.stopPropagation()"
+                        class="font-medium text-blue-600 hover:underline"
+                      >
+                        {{ ticket.displayOrderId }}
+                      </button>
+                    } @else {
+                      <span class="text-gray-400">—</span>
+                    }
+                  </td>
+
+                  <td class="px-4 py-3">
+                    {{ ticket.assignedToEmail }}
+                  </td>
+
+                  <td class="px-4 py-3">
+                    {{ ticket.createdByEmail }}
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <span
+                      class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                      [ngClass]="
+                        ticket.status === TicketStatus.Open
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-green-100 text-green-800'
+                      "
+                    >
+                      {{ getStatusLabel(ticket.status) }}
+                    </span>
+                  </td>
+
+                  <td class="whitespace-nowrap px-4 py-3">
+                    {{ ticket.createdAtUtc | date: 'medium' }}
+                  </td>
+
+                  <td class="whitespace-nowrap px-4 py-3">
+                    @if (ticket.closedAtUtc) {
+                      {{ ticket.closedAtUtc | date: 'medium' }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between">
+          <span class="text-sm text-gray-500"> Page {{ page }} of {{ totalPages() }} </span>
+
+          <div class="flex gap-2">
+            <button
+              type="button"
+              (click)="previousPage()"
+              [disabled]="page <= 1"
+              class="rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <button
+              type="button"
+              (click)="nextPage()"
+              [disabled]="page >= totalPages()"
+              class="rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      }
+    </main>
+  </div>
+
+  @if (loadingDetails()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div class="rounded-xl bg-white p-8 shadow-xl">
         <div class="text-sm text-gray-500">Loading ticket...</div>
@@ -484,6 +480,15 @@
             >
               {{ closingTicket() ? 'Closing...' : 'Mark Closed' }}
             </button>
+          } @else {
+            <button
+              type="button"
+              (click)="reopenSelectedTicket()"
+              [disabled]="reopeningTicket()"
+              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {{ reopeningTicket() ? 'Reopening...' : 'Reopen Ticket' }}
+            </button>
           }
         </div>
       </div>
@@ -496,19 +501,12 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
     (click)="closeCreateTicket()"
   >
-    <div
-      class="w-full max-w-lg rounded-xl bg-white shadow-xl"
-      (click)="$event.stopPropagation()"
-    >
+    <div class="w-full max-w-lg rounded-xl bg-white shadow-xl" (click)="$event.stopPropagation()">
       <div class="flex items-center justify-between border-b px-6 py-4">
         <div>
-          <h2 class="text-lg font-semibold text-gray-900">
-            Create Ticket
-          </h2>
+          <h2 class="text-lg font-semibold text-gray-900">Create Ticket</h2>
 
-          <p class="mt-1 text-sm text-gray-500">
-            Order ID is optional.
-          </p>
+          <p class="mt-1 text-sm text-gray-500">Order ID is optional.</p>
         </div>
 
         <button
@@ -521,16 +519,11 @@
       </div>
 
       <div class="space-y-4 p-6">
-
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Assign To *
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Assign To * </label>
 
           @if (loadingAssignableUsers()) {
-            <div class="text-sm text-gray-500">
-              Loading users...
-            </div>
+            <div class="text-sm text-gray-500">Loading users...</div>
           } @else {
             <div
               class="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-gray-300 bg-white p-2"
@@ -542,12 +535,7 @@
                   <input
                     type="checkbox"
                     [checked]="ticketAssignedToUserIds.includes(user.userId)"
-                    (change)="
-                      toggleTicketAssignee(
-                        user.userId,
-                        $any($event.target).checked
-                      )
-                    "
+                    (change)="toggleTicketAssignee(user.userId, $any($event.target).checked)"
                     class="h-4 w-4 rounded border-gray-300"
                   />
 
@@ -577,9 +565,7 @@
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">
             Order ID
-            <span class="font-normal text-gray-400">
-              (optional)
-            </span>
+            <span class="font-normal text-gray-400"> (optional) </span>
           </label>
 
           <input
@@ -591,9 +577,7 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Title *
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Title * </label>
 
           <input
             type="text"
@@ -604,9 +588,7 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">
-            Message *
-          </label>
+          <label class="mb-1 block text-sm font-medium text-gray-700"> Message * </label>
 
           <textarea
             [(ngModel)]="ticketMessage"
@@ -615,7 +597,6 @@
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
           ></textarea>
         </div>
-
       </div>
 
       <div class="flex justify-end gap-3 border-t px-6 py-4">

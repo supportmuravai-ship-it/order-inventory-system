@@ -68,6 +68,7 @@ export class AdminComponent implements OnInit {
     returns: 0,
     needsAttention: 0,
     needToShip: 0,
+    refund: 0,
   });
 
   readonly shopifyHealth = signal<AdminShopifyHealth[]>([]);

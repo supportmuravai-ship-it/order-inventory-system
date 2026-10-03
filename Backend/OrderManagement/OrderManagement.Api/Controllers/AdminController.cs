@@ -73,6 +73,9 @@ public class AdminController : ControllerBase
                 RepeatedOrder = group.Count(x =>
                     x.OrderStatus == OrderStatus.RepeatedOrder),
 
+                Refund = group.Count(x =>
+                    x.OrderStatus == OrderStatus.Refund),
+
                 Returns = group.Count(x =>
                     x.OrderStatus == OrderStatus.Return ||
                     x.OrderStatus == OrderStatus.ReturnInProcess),
@@ -82,6 +85,7 @@ public class AdminController : ControllerBase
                     x.OrderStatus != OrderStatus.Return &&
                     x.OrderStatus != OrderStatus.Cancelled &&
                     x.OrderStatus != OrderStatus.RepeatedOrder &&
+                    x.OrderStatus != OrderStatus.Refund &&
                     x.LastStatusChangedAtUtc <= attentionThreshold),
 
                 NeedToShip = group.Count(x =>

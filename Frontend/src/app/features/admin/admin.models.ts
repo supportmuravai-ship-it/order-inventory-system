@@ -12,6 +12,7 @@ export interface AdminOrderKpis {
   returns: number;
   needsAttention: number;
   needToShip: number;
+  refund: number;
 }
 
 export interface AdminShopifyHealth {

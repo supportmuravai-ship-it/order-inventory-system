@@ -948,6 +948,57 @@ public class TicketsController : ControllerBase
         });
     }
 
+    [HttpPost("{id:int}/reopen")]
+    public async Task<ActionResult> ReopenTicket(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var ticket = await _db.OrderTickets
+            .Include(x => x.Assignees)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (ticket is null)
+        {
+            return NotFound("Ticket not found.");
+        }
+
+        var hasAccess = await _storeAccessService.HasAccessAsync(
+            userId,
+            ticket.StoreId);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        var isAdmin = User.IsInRole("Admin");
+
+        if (!isAdmin &&
+            !ticket.Assignees.Any(x => x.UserId == userId) &&
+            ticket.CreatedByUserId != userId)
+        {
+            return Forbid();
+        }
+
+        if (ticket.Status == TicketStatus.Open)
+        {
+            return BadRequest("Ticket is already open.");
+        }
+
+        ticket.Status = TicketStatus.Open;
+        ticket.ClosedAtUtc = null;
+        ticket.ClosedByUserId = null;
+
+        await _db.SaveChangesAsync();
+
+        return Ok();
+    }
+
     // =========================================================
     // PRIVATE HELPERS
     // =========================================================

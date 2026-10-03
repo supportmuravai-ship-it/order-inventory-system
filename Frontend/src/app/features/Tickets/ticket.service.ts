@@ -151,4 +151,14 @@ export class TicketService {
       },
     );
   }
+
+  reopenTicket(id: number): Observable<void> {
+  return this.http.post<void>(
+    `${this.apiUrl}/api/tickets/${id}/reopen`,
+    {},
+    {
+      withCredentials: true,
+    },
+  );
+}
 }

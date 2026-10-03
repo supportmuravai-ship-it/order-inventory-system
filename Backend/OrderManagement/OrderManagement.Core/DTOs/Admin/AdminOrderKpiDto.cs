@@ -20,9 +20,11 @@ public class AdminOrderKpiDto
 
     public int ReturnInProcess { get; set; }
 
+    public int Refund { get; set; }
+
     public int RepeatedOrder { get; set; }
 
-    public int Returns { get; set; } // its the Admin Dashboard aggregate
+    public int Returns { get; set; }
 
     public int NeedsAttention { get; set; }
 

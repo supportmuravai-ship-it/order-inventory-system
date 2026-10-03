@@ -45,6 +45,8 @@ readonly openTicketCount = signal(0);
   readonly successMessage = signal('');
 readonly errorMessage = signal('');
 
+  readonly reopeningTicket = signal(false);
+
   searchValue = '';
   assignedUserFilter = '';
 
@@ -98,6 +100,40 @@ readonly errorMessage = signal('');
         },
       });
   }
+
+  reopenSelectedTicket(): void {
+  const ticket = this.selectedTicket();
+
+  if (!ticket || ticket.status === TicketStatus.Open) {
+    return;
+  }
+
+  this.reopeningTicket.set(true);
+
+  this.ticketService.reopenTicket(ticket.id).subscribe({
+    next: () => {
+      this.reopeningTicket.set(false);
+      this.selectedTicket.set(null);
+
+      this.loadTickets();
+      this.loadOpenTicketCount();
+
+      this.errorMessage.set('');
+      this.successMessage.set('Ticket reopened successfully.');
+    },
+
+    error: (error) => {
+      this.reopeningTicket.set(false);
+
+      this.successMessage.set('');
+      this.errorMessage.set(
+        typeof error.error === 'string'
+          ? error.error
+          : 'Failed to reopen ticket.',
+      );
+    },
+  });
+}
 
   searchTickets(): void {
     this.page = 1;
