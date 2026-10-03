@@ -154,6 +154,7 @@ export interface OrderSummary {
   needsAttention: number;
   new: number;
   needToShip: number;
+  refund: number;
 }
 
 export interface CsvImportError {

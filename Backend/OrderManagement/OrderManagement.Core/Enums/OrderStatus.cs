@@ -1,6 +1,4 @@
-﻿namespace OrderManagement.Core.Enums;
-
-public enum OrderStatus
+﻿public enum OrderStatus
 {
     Confirmed = 0,
     Shipped = 1,
@@ -10,5 +8,6 @@ public enum OrderStatus
     ReturnInProcess = 5,
     Cancelled = 6,
     RepeatedOrder = 7,
-    New = 8
+    New = 8,
+    Refund = 9
 }

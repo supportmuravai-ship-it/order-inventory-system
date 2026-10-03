@@ -178,6 +178,7 @@ public class OrdersController : ControllerBase
                 x.OrderStatus != OrderStatus.Return &&
                 x.OrderStatus != OrderStatus.Cancelled &&
                 x.OrderStatus != OrderStatus.RepeatedOrder &&
+                x.OrderStatus != OrderStatus.Refund &&
                 x.LastStatusChangedAtUtc <= attentionThreshold);
         }
 
@@ -311,7 +312,8 @@ public class OrdersController : ControllerBase
                 row.Order.OrderStatus == OrderStatus.Delivered ||
                 row.Order.OrderStatus == OrderStatus.Return ||
                 row.Order.OrderStatus == OrderStatus.Cancelled ||
-                row.Order.OrderStatus == OrderStatus.RepeatedOrder;
+                row.Order.OrderStatus == OrderStatus.RepeatedOrder ||
+                row.Order.OrderStatus == OrderStatus.Refund;
 
             row.Order.NeedsAttention =
                 !isFinalStatus &&
@@ -426,11 +428,15 @@ public class OrdersController : ControllerBase
                 RepeatedOrder = group.Count(x =>
                     x.OrderStatus == OrderStatus.RepeatedOrder),
 
+                Refund = group.Count(x =>
+    x.OrderStatus == OrderStatus.Refund),
+
                 NeedsAttention = group.Count(x =>
                     x.OrderStatus != OrderStatus.Delivered &&
                     x.OrderStatus != OrderStatus.Return &&
                     x.OrderStatus != OrderStatus.Cancelled &&
                     x.OrderStatus != OrderStatus.RepeatedOrder &&
+                    x.OrderStatus != OrderStatus.Refund &&
                     x.LastStatusChangedAtUtc <= attentionThreshold),
 
                 NeedToShip = group.Count(x =>
@@ -755,7 +761,8 @@ public class OrdersController : ControllerBase
             order.OrderStatus == OrderStatus.Delivered ||
             order.OrderStatus == OrderStatus.Return ||
             order.OrderStatus == OrderStatus.Cancelled ||
-            order.OrderStatus == OrderStatus.RepeatedOrder;
+            order.OrderStatus == OrderStatus.RepeatedOrder ||
+            order.OrderStatus == OrderStatus.Refund;
 
         order.NeedsAttention =
             !isFinalStatus &&

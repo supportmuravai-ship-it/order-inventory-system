@@ -102,6 +102,7 @@ export class WorkspaceComponent implements OnInit {
     needsAttention: 0,
     new: 0,
     needToShip: 0,
+    refund: 0
   });
 
   readonly summaryLoading = signal(true);
@@ -702,6 +703,7 @@ export class WorkspaceComponent implements OnInit {
       6: 'Cancelled',
       7: 'Repeated Order',
       8: 'New',
+      9: 'Refund'
     };
 
     return statuses[status] ?? 'Unknown';
@@ -718,6 +720,7 @@ export class WorkspaceComponent implements OnInit {
       6: 'bg-gray-200 text-gray-700',
       7: 'bg-pink-100 text-pink-700',
       8: 'bg-cyan-100 text-cyan-700',
+      9: 'bg-fuchsia-100 text-fuchsia-700'
     };
 
     return classes[status] ?? 'bg-gray-100 text-gray-700';
@@ -731,6 +734,10 @@ export class WorkspaceComponent implements OnInit {
     if (order.needToShip) {
       return 'bg-indigo-50 hover:bg-indigo-100';
     }
+
+    if (order.orderStatus === 9) {
+  return 'bg-fuchsia-50';
+}
 
     return this.getStatusRowClasses(order.orderStatus);
   }

@@ -211,6 +211,7 @@ export class OrderDetailsComponent implements OnInit {
       6: 'Cancelled',
       7: 'Repeated Order',
       8: 'New',
+      9: 'Refund'
     };
 
     return statuses[status] ?? 'Unknown';

@@ -25,4 +25,6 @@ public class OrderSummaryDto
     public int New { get; set; }
 
     public int NeedToShip { get; set; }
+
+    public int Refund { get; set; }
 }
