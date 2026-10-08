@@ -1430,7 +1430,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,CustomerSupport")]
+    [Authorize(Roles = "Admin,CustomerSupport,WarehouseStaff")]
     public async Task<IActionResult> CreateManualOrder(
     int storeId,
     CreateManualOrderRequest request,
