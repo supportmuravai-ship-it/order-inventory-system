@@ -30,7 +30,7 @@
         <button
           type="button"
           (click)="changeStore()"
-          class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          class="rounded-lg border border-gray-300 px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
         >
           Change Store
         </button>
@@ -131,7 +131,9 @@
 
   <div class="flex">
     <!-- Sidebar -->
-    <aside class="hidden w-60 shrink-0 bg-slate-900 p-4 lg:block lg:sticky lg:top-0 lg:h-screen lg:self-start lg:overflow-y-auto">
+    <aside
+      class="hidden w-60 shrink-0 bg-slate-900 p-4 lg:block lg:sticky lg:top-0 lg:h-screen lg:self-start lg:overflow-y-auto"
+    >
       <div class="mb-6 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white">Orders</div>
 
       <div class="space-y-2">
@@ -632,25 +634,35 @@
                         class="sticky left-0 z-30 w-[120px] min-w-[120px] whitespace-nowrap bg-inherit px-4 py-3 border-r border-gray-200"
                       >
                         @if (first) {
-                          <button
-                            type="button"
-                            (click)="openOrder(order.id)"
-                            class="font-semibold text-blue-600 hover:underline"
-                          >
-                            <span>
+                          <div class="flex flex-col items-start gap-1">
+                            <!-- Order ID -->
+                            <button
+                              type="button"
+                              (click)="openOrder(order.id)"
+                              class="font-semibold text-blue-600 hover:underline"
+                            >
                               {{ order.displayOrderId }}
-                            </span>
+                            </button>
 
-                            @if (order.needsAttention) {
+                            <!-- Order Status + Delay Time -->
+                            <div class="flex items-center gap-2">
                               <span
-                                class="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700"
-                                title="This order has remained in its current status for 12+ hours"
+                                class="text-[10px] font-medium text-gray-500"
+                                [title]="getStatusName(order.orderStatus)"
                               >
-                                {{ order.hoursInCurrentStatus | number: '1.0-0' }}h
+                                {{ getStatusName(order.orderStatus) }}
                               </span>
-                            }
 
-                          </button>
+                              @if (order.needsAttention) {
+                                <span
+                                  class="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                                  title="This order has remained in its current status for 12+ hours"
+                                >
+                                  {{ order.hoursInCurrentStatus | number: '1.0-0' }}h
+                                </span>
+                              }
+                            </div>
+                          </div>
                         }
                       </td>
 
