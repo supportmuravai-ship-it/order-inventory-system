@@ -43,9 +43,14 @@ export class LoginComponent {
             this.router.navigate(['/stores']);
           },
 
-          error: () => {
+          error: (error) => {
             this.loading.set(false);
-            this.errorMessage.set('Could not load your account.');
+
+            console.error('Load current user failed:', error);
+
+            this.errorMessage.set(
+              `Could not load your account. Status: ${error.status ?? 'unknown'}`,
+            );
           },
         });
       },
